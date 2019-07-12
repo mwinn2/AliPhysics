@@ -29,7 +29,8 @@ class AliDQTreeHandlerSingleMuons : public TObject
   
   //optPID something about MID
   enum{
-    kNoMID //trigger
+    kNoMID, //trigger
+    kMID
   };
   
      enum optsingletrack {
