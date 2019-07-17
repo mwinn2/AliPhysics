@@ -569,6 +569,10 @@ AliAnalysisTaskSEHFTreeCreator::~AliAnalysisTaskSEHFTreeCreator()
       delete fCutsLc2V0bachelor;
       fCutsLc2V0bachelor = 0x0;
     }
+    if (fCutsMuons) {
+      delete fCutsMuons;
+      fCutsMuons = 0x0;
+    }
     if (fEvSelectionCuts) {
       delete fEvSelectionCuts;
       fEvSelectionCuts = 0x0;
@@ -699,6 +703,7 @@ void AliAnalysisTaskSEHFTreeCreator::UserCreateOutputObjects()
     
     const char* nameoutput=GetOutputSlot(1)->GetContainer()->GetName();
     fNentries=new TH1F(nameoutput, "Number of events", 38,-0.5,37.5);
+    //TBD muons: add number of CMUL7 events (for Run 3 to be thought about), events rejected
     fNentries->GetXaxis()->SetBinLabel(1,"n. evt. read");
     fNentries->GetXaxis()->SetBinLabel(2,"n. evt. matched dAOD");
     fNentries->GetXaxis()->SetBinLabel(3,"n. evt. mismatched dAOD");
@@ -1137,7 +1142,6 @@ void AliAnalysisTaskSEHFTreeCreator::UserExec(Option_t */*option*/)
     TString candidates3prongArrayName="Charm3Prong";
     TString candidatesCascArrayDstarName="Dstar";
     TString candidatesCascArrayName="CascadesHF";
-    //need to look at AOD structure to implement muons
     TClonesArray *array2prong=0;
     TClonesArray *array3Prong=0;
     TClonesArray *arrayDstar=0;
@@ -1202,7 +1206,8 @@ void AliAnalysisTaskSEHFTreeCreator::UserExec(Option_t */*option*/)
     Bool_t isSameEvSelLctopKpi=kTRUE;
     Bool_t isSameEvSelBplus=kTRUE;
     Bool_t isSameEvSelDstar=kTRUE;
-    Bool_t isSameEvSelLc2V0bachelor=kTRUE;	
+    Bool_t isSameEvSelLc2V0bachelor=kTRUE;
+    Bool_t isSameEvSelSingleMuons=kTRUE;
     if(fWriteVariableTreeD0)
       isSameEvSelD0=!((fFiltCutsD0toKpi->IsEventSelected(aod) && !fCutsD0toKpi->IsEventSelected(aod))||(!fFiltCutsD0toKpi->IsEventSelected(aod) && fCutsD0toKpi->IsEventSelected(aod)));
     if(fWriteVariableTreeDs)
@@ -1217,7 +1222,7 @@ void AliAnalysisTaskSEHFTreeCreator::UserExec(Option_t */*option*/)
       isSameEvSelDstar=!((fFiltCutsDstartoKpipi->IsEventSelected(aod) && !fCutsDstartoKpipi->IsEventSelected(aod))||(!fFiltCutsDstartoKpipi->IsEventSelected(aod) && fCutsDstartoKpipi->IsEventSelected(aod)));
     if(fWriteVariableTreeLc2V0bachelor)
       isSameEvSelLc2V0bachelor=!((fFiltCutsLc2V0bachelor->IsEventSelected(aod) && !fCutsLc2V0bachelor->IsEventSelected(aod))||(!fFiltCutsLc2V0bachelor->IsEventSelected(aod) && fCutsLc2V0bachelor->IsEventSelected(aod)));
-
+    
     Bool_t isSameEvSel = isSameEvSelD0 && isSameEvSelDs && isSameEvSelDplus && isSameEvSelLctopKpi && isSameEvSelBplus && isSameEvSelDstar && isSameEvSelLc2V0bachelor;
     if(!isSameEvSel) {
       Printf("AliAnalysisTaskSEHFTreeCreator::UserExec: differences in the event selection cuts same meson");
@@ -1248,10 +1253,15 @@ void AliAnalysisTaskSEHFTreeCreator::UserExec(Option_t */*option*/)
       Printf("AliAnalysisTaskSEHFTreeCreator::UserExec: differences in the event selection cuts different meson");
       return;
     }
+    //TBD: Think through the last part for muons
     
     fCounter->StoreEvent(aod,fEvSelectionCuts,fReadMC);
     Bool_t isEvSel=fEvSelectionCuts->IsEventSelected(aod);
-
+    //isEvSel needs to be done also for muons, but not With AliRDHFCuts ...
+    //or should one simply take all the events and only write the trigger thing to the
+    //muons?, no need counter also for muons as a histogramm, so probably need a modification
+    //of AliRDHFCuts? 
+    
     if(fEvSelectionCuts->IsEventRejectedDueToTrigger())fNentries->Fill(5);
     if(fEvSelectionCuts->IsEventRejectedDueToNotRecoVertex())fNentries->Fill(6);
     if(fEvSelectionCuts->IsEventRejectedDueToVertexContributors())fNentries->Fill(7);
@@ -1303,6 +1313,8 @@ void AliAnalysisTaskSEHFTreeCreator::UserExec(Option_t */*option*/)
     fNtracks = aod->GetNumberOfTracks();
     fIsEvRej = fEvSelectionCuts->GetEventRejectionBitMap();
     fRunNumber=aod->GetRunNumber();
+    // AOD muon information (MFT to be added)
+    fNmuontracks = aod->GetNumberOfMuonTracks();
     //n tracklets
     AliAODTracklets* tracklets=aod->GetTracklets();
     Int_t nTr=tracklets->GetNumberOfTracklets();
@@ -1332,7 +1344,9 @@ void AliAnalysisTaskSEHFTreeCreator::UserExec(Option_t */*option*/)
     if(fWriteVariableTreeDstar) ProcessDstar(arrayDstar,aod,mcArray,aod->GetMagneticField());
     if(fWriteVariableTreeLc2V0bachelor) ProcessCasc(arrayCasc,aod,mcArray,aod->GetMagneticField());
     if(fFillMCGenTrees && fReadMC) ProcessMCGen(mcArray);
-  
+    //Add here ProcessMuons
+    if(fWriteVariableTreeSingleMuons) ProcessMuons(aod, muoncuts);
+    
     // Fill the jet tree
     if (fWriteNJetTrees > 0 || fFillParticleTree) {
       FillJetTree();
@@ -2635,6 +2649,59 @@ void AliAnalysisTaskSEHFTreeCreator::ProcessCasc(TClonesArray *arrayCasc, AliAOD
   delete vHF;
   return;
 }
+//_________________________________________________________________
+void AliAnalysisTasSEHFTreeCreator::ProcessMuons(AliAODEvent *aod, AliMuonTrackCuts *cuts){
+  //check what to do with trigger mask
+  //really needed to loop over all tracks
+  //check n muons
+
+
+    Int_t nMuons = aod->GetNumberOfMuonTracks(); //any way to get this number from ALIAOD without looking?
+    
+    if(nMuons==0) return;
+  //some debugging.
+
+  AliAODVertex *vtx1 = (AliAODVertex*) aod->GetPrimaryVertex();
+  Int_t nSelectedMuons=0;
+
+  //  AliAnalysisvertexing *vHF = ;; not needed should be sufficient
+  for (Int_t imuons = 0; imuons < nMuons; imuons){
+    //const Char_t *trigNames[14] = { "CINT7-B-NOPF-MUFAST", "C0V0M-B-NOPF-MUFAST", "C0VSC-B-NOPF-MUFAST", "C0V0H-B-NOPF-MUFAST", "CMSL7-B-NOPF-MUFAST", "CMSH7-B-NOPF-MUFAST", "CMUL7-B-NOPF-MUFAST", "CMLL7-B-NOPF-MUFAST", "CINT7ZAC-B-NOPF-CENTNOPMD", "CV0H7-B-NOPF-CENTNOPMD", "CMID7-B-NOPF-CENTNOPMD", "CINT7-T-NOPF-CENT", "CV0H7-B-NOPF-CENT ", "CMID7-B-NOPF-CENT "};
+    //	fFiredTriggerClass = aod->GetFiredTriggerClasses();
+    //  fTriggerCINT7 = (fFiredTriggerClass.Contains( trigNames[0])) ? 1 : 0;
+    //  fTriggerC0V0M = (fFiredTriggerClass.Contains( trigNames[1])) ? 1 : 0;
+    //  fTriggerC0VSC = (fFiredTriggerClass.Contains( trigNames[2])) ? 1 : 0;
+    //  fTriggerC0V0H = (fFiredTriggerClass.Contains( trigNames[3])) ? 1 : 0;
+    //	fTriggerCMSL7 = (fFiredTriggerClass.Contains( trigNames[4])) ? 1 : 0;
+    //	fTriggerCMSH7 = (fFiredTriggerClass.Contains( trigNames[5])) ? 1 : 0;
+    //	fTriggerCMUL7 = (fFiredTriggerClass.Contains( trigNames[6])) ? 1 : 0;
+    //	fTriggerCMLL7 = (fFiredTriggerClass.Contains( trigNames[7])) ? 1 : 0;
+    //  if(fTriggerCMUL7)
+    //		fPassTriggerSelection = 1;
+    //	else
+    //		fPassTriggerSelection = 0;
+    //Charm or beauty mouns 
+    //AliAODTrack *track1;
+    //	AliAODTrack *track2;
+    //	Dimuon *dimuon;
+    //	TLorentzVector muon1L, muon2L, dimuonL;
+    
+    //	TLorentzVector muon1LRotNeg, muon2LRotNeg, dimuonLRotNeg;
+    //	TLorentzVector muon1LRotPos, muon2LRotPos, dimuonLRotPos;	
+    // dimuon case
+    //	for(Int_t itrack1 = 0; itrack1<(aod->GetNumberOfTracks()) ; itrack1 ++){
+    //		track1 = (AliAODTrack*)aod->GetTrack(itrack1);		
+    //		if(!track1) {
+    //			Printf("track 1 not available\n");
+    //			continue;
+    //		}		
+    //		if (!track1->IsMuonTrack()) continue;
+		// first muon lorentz vector
+    //		muon1L.SetPxPyPzE(track1->Px(), track1->Py(), track1->Pz(), track1->E());
+    //  }
+  
+  
+}						   
 //_________________________________________________________________
 void AliAnalysisTaskSEHFTreeCreator::ProcessMCGen(TClonesArray *arrayMC){
   /// Fill MC gen trees

@@ -31,6 +31,7 @@
 #include <TH3F.h>
 
 #include "AliAnalysisTaskSE.h"
+#include "AliMuonTrackCuts.h"
 #include "AliRDHFCutsD0toKpi.h"
 #include "AliRDHFCutsDstoKKpi.h"
 #include "AliRDHFCutsDplustoKpipi.h"
@@ -131,8 +132,7 @@ public:
     void ProcessCasc(TClonesArray *arrayCasc, AliAODEvent *aod, TClonesArray *arrMC, Float_t bfield);
     void ProcessMCGen(TClonesArray *mcarray);
 
-    //TO BE UNDERSTOOD what this is necessary for.
-    void ProcessMuons(TClonesArray *muons, AliAODEvent *aod, TClonesArray *arrMC, Float_t bfield);
+    void ProcessMuons(AliAODEvent *aod, AliMuonTrackCuts *cuts);
   
     Bool_t CheckDaugAcc(TClonesArray* arrayMC,Int_t nProng, Int_t *labDau);
     AliAODVertex* ReconstructBplusVertex(const AliVVertex *primary, TObjArray *tracks, Double_t bField, Double_t dispersion);
@@ -194,6 +194,7 @@ private:
     AliRDHFCutsBPlustoD0Pi  *fCutsBplustoD0pi;                     //      BplustoD0pi analysis cuts
     AliRDHFCutsDStartoKpipi *fCutsDstartoKpipi;                    //      DstartoKpipi analysis cuts
     AliRDHFCutsLctoV0       *fCutsLc2V0bachelor;                   //      Lc2V0bachelor analysis cuts
+    AliMuonTrackCuts        *fCutsMuons; 
     AliRDHFCuts             *fEvSelectionCuts;                     //      Event selection cuts
     Bool_t                  fReadMC;                               //     flag for MC array: kTRUE = read it, kFALSE = do not read it
     TList                   *fListCounter;                         //!<!   list for normalization counter on output slot 3
