@@ -4,28 +4,53 @@
 /* $Id$ */
 
 //*************************************************************************
-// \class AliHFTreeHandlerDiMuons
+// \class AliDQTreeHandlerDiMuons
 // \brief helper class to handle a tree for D0 cut optimisation and MVA analyses
 // \authors:
 // M. Winn, mwinn@cern.ch
 // heavily based on AliHFTreeHandlerD0toKpi
 /////////////////////////////////////////////////////////////
 
+#include <cmath>
+#include <limits>
 #include <TString.h>
-#include "AliHFTreeHandlerDiMUons.h"
-#include "AliAODRecoDecayHF2Prong.h"//TBC
+#include "AliDQTreeHandlerDiMuons.h"
+//#include "AliAODRecoDecayHF2Prong.h": use different framework
 
 /// \cond CLASSIMP
-ClassImp(AliHFTreeHandlerD0toKpi);
+ClassImp(AliDQTreeHandlerDiMuons);
 /// \endcond
 
 //________________________________________________________________
-AliHFTreeHandlerDiMuons::AliHFTreeHandlerDiMuons():
-  AliHFTreeHandler(),
+AliDQTreeHandlerDiMuons::AliDQTreeHandlerDiMuons():
+  TObject(),
+  fTreeVar(nullptr),
+  fNProngs(-1),
+  fCandType(0),
+  fInvMass(-9999.),
+  fPt(-9999.),
+  fPtGen(-9999.),
+  fY(-9999.),
+  fEta(-9999.),
+  fPhi(-9999.),
+  fDecayLength(-9999.),
+  fDecayLengthNorm(-9999.),
+  fDecayLengthZ(-9999.),
+  fNormDecayLengthZ(-9999.),
+  fCosP(-9999.),
+  fCosPz(-9999.),
+  fPidOpt(-1),
+  fMIDchi2perNDF(-9999.),
+  fSingleTrackOpt(true),
+  fFillOnlySignal(false),
+  fIsMCGenTree(false),
+  fDauInAcceptance(true),
+  fEvID(0),
+  fRunNumber(-1),
+  fRunNumberPrevCand(-1),
   fCosThetaStar(-9999.),
   fImpParProd(-9999.),
-  fNormd0MeasMinusExp(-9999.),
-  fNormDecayLength(-9999.)
+  fNormjpsiMeasMinusExp(-9999.)
 {
   //
   // Default constructor
@@ -33,30 +58,19 @@ AliHFTreeHandlerDiMuons::AliHFTreeHandlerDiMuons():
 
   fNProngs=2; // --> cannot be changed
   for(unsigned int iProng=0; iProng<fNProngs; iProng++) {
+    fDCA[iProng] = -9999.;
+    fPProng[iProng] = 9999.;
+    fMCHPProng[iProng] = 9999.;
+    fPtProng[iProng] = 9999.;
+    fEtaProng[iProng] = 9999.;
+    fPhiProng[iProng] = 9999.;
+    fNMFTclsProng[iProng] = -1;
+    fMFTclsMapProng[iProng] = -1;
+    fNMCHclsProng[iProng] = -1;
     fImpParProng[iProng] = -9999.;
     fImpParErrProng[iProng] = -9999.;
   }
 }
-
-//________________________________________________________________
-AliHFTreeHandlerDiMuons::AliHFTreeHandlerDiMuons(int PIDopt):
-  AliHFTreeHandler(PIDopt),
-  fCosThetaStar(-9999.),
-  fImpParProd(-9999.),
-  fNormd0MeasMinusExp(-9999.),
-  fNormDecayLength(-9999.)
-{
-  //
-  // Standard constructor
-  //
-
-  fNProngs=2; // --> cannot be changed
-  for(unsigned int iProng=0; iProng<fNProngs; iProng++) { 
-    fImpParProng[iProng] = -9999.;
-    fImpParErrProng[iProng] = -9999.;
-  }
-}
-
 //________________________________________________________________
 AliHFTreeHandlerDiMuons::~AliHFTreeHandlerDiMuons()
 {
@@ -66,7 +80,7 @@ AliHFTreeHandlerDiMuons::~AliHFTreeHandlerDiMuons()
 }
 
 //________________________________________________________________
-TTree* AliHFTreeHandlerDiMuons::BuildTree(TString name, TString title) 
+TTree* AliDQTreeHandlerDiMuons::BuildTree(TString name, TString title) 
 {
   fIsMCGenTree=false;
   
@@ -77,8 +91,9 @@ TTree* AliHFTreeHandlerDiMuons::BuildTree(TString name, TString title)
   fTreeVar = new TTree(name.Data(),title.Data());
 
   //set common variables
-  AddCommonDmesonVarBranches();
-
+  // need to be replaced, simple things momentum eta etc. pp
+  //  AddCommonDmesonVarBranches();
+  //CONTINUE HERE!
   //set Dimuon variables
   fTreeVar->Branch("cos_t_star",&fCosThetaStar);
   fTreeVar->Branch("imp_par_prod",&fImpParProd);

@@ -1,5 +1,5 @@
-#ifndef ALIHFTREEHANDLERD0TOKPI_H
-#define ALIHFTREEHANDLERD0TOKPI_H
+#ifndef ALIDQTREEHANDLERSINGLEMUONS_H
+#define ALIDQTREEHANDLERSINGLEMUONS_H
 
 /* Copyright(c) 1998-2008, ALICE Experiment at CERN, All rights reserved. *
  * See cxx source for full Copyright notice                               */
@@ -7,7 +7,7 @@
 /* $Id$ */
 
 //*************************************************************************
-// \class AliHFTreeHandlerDiMuons
+// \class AliDQTreeHandlerSingleMuons
 // \brief helper class to handle a tree for Dimuon cut optimisation and MVA analyses
 // \authors:
 // M. Winn, mwinn@cern.ch
@@ -23,12 +23,21 @@ class AliDQTreeHandlerSingleMuons : public TObject
   public:
 
   enum candtype{
-    kMFTmatch //empty for now for Run 2
+    kSelected         = BIT(0),
+    kSignal           = BIT(1),
+    kBkg              = BIT(2),
+    kPrompt           = BIT(3),
+    kFD               = BIT(4),
+    kRefl             = BIT(5),
+    kSelectedTopo     = BIT(6),
+    kSelectedPID      = BIT(7),
+    kSelectedTracks   = BIT(8),
+    //    kMFTmatch  //empty for now for Run 2
   };
   
   
   //optPID something about MID
-  enum{
+  enum optpid {// check if 
     kNoMID, //trigger
     kMID
   };
@@ -109,14 +118,14 @@ class AliDQTreeHandlerSingleMuons : public TObject
       return false;
     }
     static bool IsSelectedStdTracks(int candtype) {
-      of(candtype>>8&1) return true;
+      if(candtype>>8&1) return true;
       return false;
     }
 
  protected:
 
     //constant variables
-    static const unsgined int knMaxProngs = 3;
+    static const unsigned int knMaxProngs = 3;
     //Prong: Muon + MFT standalone tracklet
 
     
@@ -131,9 +140,9 @@ class AliDQTreeHandlerSingleMuons : public TObject
 
     
     TTree* fTreeVar; /// tree with variables
-    unsigned int fNProngs;///number of prongs: muon + MFT trackles
+    unsigned int fNProngs;///number of prongs: muon + MFT tracklets
     unsigned int fNCandidates; /// number of candidates in one fill (event)
-    inf fCandType; /// flag for candidate type (bit map above)
+    int fCandType; /// flag for candidate type (bit map above)
     float fInvMass; ///candidate invariant mass: for MFT tracklet + muon: could estimate momentum from transverse plane balance of both tracks w.r.t. line of flight -> get momentum tracklet, get mass of 2-track system, similar for following variables...
     float fPt; ///candidate pt
     float fPtGen; ///generated candidate pt
