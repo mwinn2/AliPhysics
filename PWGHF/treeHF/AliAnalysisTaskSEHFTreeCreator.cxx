@@ -2662,8 +2662,10 @@ void AliAnalysisTaskSEHFTreeCreator::ProcessMuons(AliAODEvent *aod, AliMuonTrack
 
     Int_t nMuons = aod->GetNumberOfMuonTracks(); //any way to get this number from ALIAOD without looking?
     if(nMuons==0) return;
-  
-    //ptgen?
+
+    //TODO add lines in analogy to D0 part
+    float ptgen = -999.;
+    
     float bfield = aod->GetMuonMagFieldScale();//dipole field for muons
     //
     
@@ -2673,16 +2675,20 @@ void AliAnalysisTaskSEHFTreeCreator::ProcessMuons(AliAODEvent *aod, AliMuonTrack
   TRefArray muons; //TODO: check ownership and process iD
 
   Int_t nMuons2 = aod->GetMuonTracks(&muons);
-
   if(nMuons2!=nMuons) return; //TODO alifatal
+
   
   //  AliAnalysisvertexing *vHF = ;; not needed should be sufficient
   for (Int_t imuons = 0; imuons < nMuons; ++imuons){
-
+    
 
     AliAODTrack* muon = (AliAODTrack*) muons.At(imuons);
     //need to use AliMuonCuts
-    fTreeHandlerSingleMuons->SetVariables(fRunNumber, fEventID, 0.0, muon, bfield);
+    if(!cuts->IsSelected(muon)) continue;
+    //some additional trigger selection?   
+    nSelectedMuons++;
+ 
+    fTreeHandlerSingleMuons->SetVariables(fRunNumber, fEventID, ptgen, muon, bfield);
     
     //const Char_t *trigNames[14] = { "CINT7-B-NOPF-MUFAST", "C0V0M-B-NOPF-MUFAST", "C0VSC-B-NOPF-MUFAST", "C0V0H-B-NOPF-MUFAST", "CMSL7-B-NOPF-MUFAST", "CMSH7-B-NOPF-MUFAST", "CMUL7-B-NOPF-MUFAST", "CMLL7-B-NOPF-MUFAST", "CINT7ZAC-B-NOPF-CENTNOPMD", "CV0H7-B-NOPF-CENTNOPMD", "CMID7-B-NOPF-CENTNOPMD", "CINT7-T-NOPF-CENT", "CV0H7-B-NOPF-CENT ", "CMID7-B-NOPF-CENT "};
     //	fFiredTriggerClass = aod->GetFiredTriggerClasses();
