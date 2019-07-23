@@ -53,7 +53,7 @@ class AliDQTreeHandlerSingleMuons : public TObject
     virtual ~AliDQTreeHandlerSingleMuons();
 
     TTree* BuildTree(TString name, TString title);
-    bool SetVariables(int runnumber, unsigned int eventID, float ptgen, AliAODTrack* cand, float bfiled, int masshypo=0);
+    bool SetVariables(int runnumber, unsigned int eventID, float ptgen, AliAODTrack* cand, float bfield);
 
     TTree* BuildTreeMCGen(TString name, TString title);
     bool SetMCGenVariables(int runnumber, unsigned int eventID, AliAODMCParticle* mcpart);
@@ -79,14 +79,14 @@ class AliDQTreeHandlerSingleMuons : public TObject
       if(isselected) fCandType |= kSelected;
       else fCandType &= ~kSelected;
       if(isselectedTopo) fCandType |= kSelectedTopo;
-      else fCandType & = ~kSelectedTopo;
+      else fCandType &= ~kSelectedTopo;
       if(isselectedPID) fCandType |= kSelectedPID;
-      else fCandType & = ~kSelectedPID;
+      else fCandType &= ~kSelectedPID;
       if(isselectedTracks) fCandType |= kSelectedTracks;
       else fCandType &= ~kSelectedTracks;
     }
 
-    void SetInAcceptance(bool inacc = true) {fInAcceptance=inacc;}
+    void SetInAcceptance(bool inacc = true) {fTrackInAcceptance=inacc;}
     
     static bool IsSelectedStd(int candtype) {
       if(candtype&1) return true;

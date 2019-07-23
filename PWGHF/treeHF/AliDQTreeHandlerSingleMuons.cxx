@@ -4,7 +4,7 @@
 /* $Id$ */
 
 //*************************************************************************
-// \class AliDQTreeHandlerDiMuons
+// \class AliDQTreeHandlerSingleMuons
 // \brief helper class to handle a tree for D0 cut optimisation and MVA analyses
 // \authors:
 // M. Winn, mwinn@cern.ch
@@ -43,7 +43,7 @@ AliDQTreeHandlerSingleMuons::AliDQTreeHandlerSingleMuons():
   fMuonEta(-9999.),
   fMuonPhi(-9999.),
   fMuonChi2perNDF(-9999.),
-  fMUONMCHcls(-1),
+  fMuonMCHcls(-1),
   fMIDPID(-9999.),
   fPidOpt(-1),
   fSingleTrackOpt(-1),
@@ -69,7 +69,7 @@ AliDQTreeHandlerSingleMuons::AliDQTreeHandlerSingleMuons():
 }
 
 //________________________________________________________________
-AliDQTreeHandlerSingleMuons::~AliHFTreeHandlerSingleMuons()
+AliDQTreeHandlerSingleMuons::~AliDQTreeHandlerSingleMuons()
 {
   //
   // Default Destructor
@@ -137,20 +137,20 @@ TTree* AliDQTreeHandlerSingleMuons::BuildTreeMCGen(TString name, TString title) 
   fTreeVar->Branch("y_cand",&fY);
   fTreeVar->Branch("eta_cand",&fEta);
   fTreeVar->Branch("phi_cand",&fPhi);
-  fTreeVar->Branch("track_in_acc",&fInAcceptance);
+  fTreeVar->Branch("track_in_acc",&fTrackInAcceptance);
 
   return fTreeVar;
 
 }
 //________________________________________________________________
-bool AliHFTreeHandlerDiMuons::SetVariables(int runnumber, unsigned int eventID, float ptgen, AliAODTrack* cand, float bfield, int masshypo) 
+bool AliDQTreeHandlerSingleMuons::SetVariables(int runnumber, unsigned int eventID, float ptgen, AliAODTrack* cand, float bfield) 
 //needs to be changed to standard Dimuons, is there already an object like that?
 {
   fIsMCGenTree=false;
 
   if(!cand) return false;
   if(fFillOnlySignal) { //if fill only signal and not signal candidate, do not store
-    if(!fCandType&kSignal) return true;
+    if(!(fCandType&kSignal)) return true;
   }
   fNCandidates++;
   fRunNumber=runnumber;
@@ -164,10 +164,10 @@ bool AliHFTreeHandlerDiMuons::SetVariables(int runnumber, unsigned int eventID, 
   fEta=cand->Eta();
   fPhi=cand->Phi();
   fDecayLength= 0.0; //to be seen how to do best to get it from AOD in principle, just vector length between PV and seconary vertex
-  fDecayLengthXY= 0.0; //cand->DecayLengthXY(); idem
-  fNormDecayLengthXY= 0.0; //cand->NormalizedDecayLengthXY();
-  fDCA=cand->DCA();
-  fNormDecayLength=cand->NormalizedDecayLength();
+  fDecayLengthZ= 0.0; //cand->DecayLengthXY(); idem
+  fNormDecayLengthZ= 0.0; //cand->NormalizedDecayLengthXY();
+  fMuonDCA=cand->DCA();
+  fDecayLengthNorm= 0.0; //cand->NormalizedDecayLength();
   
   //D0 -> Kpi variables
 

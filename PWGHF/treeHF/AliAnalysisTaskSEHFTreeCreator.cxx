@@ -43,6 +43,7 @@
 #include <TH2F.h>
 #include <TDatabasePDG.h>
 #include <THnSparse.h>
+#include <TRefArray.h>
 #include <AliAnalysisDataSlot.h>
 #include <AliAnalysisDataContainer.h>
 #include "TChain.h"
@@ -109,6 +110,7 @@ fCutsLctopKpi(0x0),
 fCutsBplustoD0pi(0x0),
 fCutsDstartoKpipi(0x0),
 fCutsLc2V0bachelor(0x0),
+fCutsMuons(0x0),
 fEvSelectionCuts(0x0),
 fReadMC(0),
 fListCounter(0x0),
@@ -149,6 +151,7 @@ fTreeHandlerLctopKpi(0x0),
 fTreeHandlerBplus(0x0),
 fTreeHandlerDstar(0x0),
 fTreeHandlerLc2V0bachelor(0x0),
+fTreeHandlerSingleMuons(0x0),
 fTreeHandlerGenD0(0x0),
 fTreeHandlerGenDs(0x0),
 fTreeHandlerGenDplus(0x0),
@@ -156,6 +159,7 @@ fTreeHandlerGenLctopKpi(0x0),
 fTreeHandlerGenBplus(0x0),
 fTreeHandlerGenDstar(0x0),
 fTreeHandlerGenLc2V0bachelor(0x0),
+fTreeHandlerGenSingleMuons(0x0),
 fPIDresp(0x0),
 fPIDoptD0(AliHFTreeHandler::kRawAndNsigmaPID),
 fPIDoptDs(AliHFTreeHandler::kRawAndNsigmaPID),
@@ -243,6 +247,7 @@ fCutsLctopKpi(0x0),
 fCutsBplustoD0pi(0x0),
 fCutsDstartoKpipi(0x0),
 fCutsLc2V0bachelor(0x0),
+fCutsMuons(0x0),
 fEvSelectionCuts(0x0),
 fReadMC(0),
 fListCounter(0x0),
@@ -257,7 +262,7 @@ fWriteVariableTreeLctopKpi(0),
 fWriteVariableTreeBplus(0),
 fWriteVariableTreeDstar(0),
 fWriteVariableTreeLc2V0bachelor(0),
-fWriteVariableTreeSingleMouns(0),
+fWriteVariableTreeSingleMuons(0),
 fVariablesTreeD0(0x0),
 fVariablesTreeDs(0x0),
 fVariablesTreeDplus(0x0),
@@ -300,7 +305,7 @@ fPIDoptLctopKpi(AliHFTreeHandler::kRawAndNsigmaPID),
 fPIDoptBplus(AliHFTreeHandler::kRawAndNsigmaPID),
 fPIDoptDstar(AliHFTreeHandler::kRawAndNsigmaPID),
 fPIDoptLc2V0bachelor(AliHFTreeHandler::kRawAndNsigmaPID),
-fPIDoptSingleMuons(AliDQSingleMuons::kMID),
+fPIDoptSingleMuons(AliDQTreeHandlerSingleMuons::kMID),
 fCentrality(-999.),
 fzVtxReco(0.),
 fzVtxGen(0.),
@@ -313,7 +318,6 @@ fEventID(0),
 fFileName(""),
 fDirNumber(0),
 fnTracklets(0),
-fnmuontracks(0),
 fnV0A(0),
 fFillMCGenTrees(kTRUE),
 fDsMassKKOpt(1),
@@ -784,7 +788,7 @@ void AliAnalysisTaskSEHFTreeCreator::UserCreateOutputObjects()
     OpenFile(5);
     fTreeEvChar = new TTree("tree_event_char","tree_event_char");
     //set variables
-    TString varnames[10] = {"centrality", "z_vtx_reco", "n_vtx_contributors", "n_tracks", "n_muontracks" , "is_ev_rej", "run_number", "ev_id", "n_tracklets", "V0Amult", "z_vtx_gen"};
+    TString varnames[11] = {"centrality", "z_vtx_reco", "n_vtx_contributors", "n_tracks", "n_muontracks" , "is_ev_rej", "run_number", "ev_id", "n_tracklets", "V0Amult", "z_vtx_gen"};
     fTreeEvChar->Branch(varnames[0].Data(),&fCentrality,Form("%s/F",varnames[0].Data()));
     fTreeEvChar->Branch(varnames[1].Data(),&fzVtxReco,Form("%s/F",varnames[1].Data()));
     fTreeEvChar->Branch(varnames[2].Data(),&fNcontributors,Form("%s/I",varnames[2].Data()));
@@ -936,7 +940,7 @@ void AliAnalysisTaskSEHFTreeCreator::UserCreateOutputObjects()
             fTreeEvChar->AddFriend(fGenTreeLc2V0bachelor);
         }
     }
-if(fWriteVariableTreeSingleMouns){
+if(fWriteVariableTreeSingleMuons){
         OpenFile(20);
         TString nameoutput = "tree_singlemuons";
         fTreeHandlerSingleMuons = new AliDQTreeHandlerSingleMuons();//check if PID option passed
@@ -1345,7 +1349,7 @@ void AliAnalysisTaskSEHFTreeCreator::UserExec(Option_t */*option*/)
     if(fWriteVariableTreeLc2V0bachelor) ProcessCasc(arrayCasc,aod,mcArray,aod->GetMagneticField());
     if(fFillMCGenTrees && fReadMC) ProcessMCGen(mcArray);
     //Add here ProcessMuons
-    if(fWriteVariableTreeSingleMuons) ProcessMuons(aod, muoncuts);
+    if(fWriteVariableTreeSingleMuons) ProcessMuons(aod, fCutsMuons); //TODO: fCutsMuons needs to be set somewhere
     
     // Fill the jet tree
     if (fWriteNJetTrees > 0 || fFillParticleTree) {
@@ -2650,22 +2654,36 @@ void AliAnalysisTaskSEHFTreeCreator::ProcessCasc(TClonesArray *arrayCasc, AliAOD
   return;
 }
 //_________________________________________________________________
-void AliAnalysisTasSEHFTreeCreator::ProcessMuons(AliAODEvent *aod, AliMuonTrackCuts *cuts){
+void AliAnalysisTaskSEHFTreeCreator::ProcessMuons(AliAODEvent *aod, AliMuonTrackCuts *cuts){
   //check what to do with trigger mask
   //really needed to loop over all tracks
   //check n muons
 
 
     Int_t nMuons = aod->GetNumberOfMuonTracks(); //any way to get this number from ALIAOD without looking?
-    
     if(nMuons==0) return;
-  //some debugging.
-
+  
+    //ptgen?
+    float bfield = aod->GetMuonMagFieldScale();//dipole field for muons
+    //
+    
   AliAODVertex *vtx1 = (AliAODVertex*) aod->GetPrimaryVertex();
   Int_t nSelectedMuons=0;
 
+  TRefArray muons; //TODO: check ownership and process iD
+
+  Int_t nMuons2 = aod->GetMuonTracks(&muons);
+
+  if(nMuons2!=nMuons) return; //TODO alifatal
+  
   //  AliAnalysisvertexing *vHF = ;; not needed should be sufficient
-  for (Int_t imuons = 0; imuons < nMuons; imuons){
+  for (Int_t imuons = 0; imuons < nMuons; ++imuons){
+
+
+    AliAODTrack* muon = (AliAODTrack*) muons.At(imuons);
+    //need to use AliMuonCuts
+    fTreeHandlerSingleMuons->SetVariables(fRunNumber, fEventID, 0.0, muon, bfield);
+    
     //const Char_t *trigNames[14] = { "CINT7-B-NOPF-MUFAST", "C0V0M-B-NOPF-MUFAST", "C0VSC-B-NOPF-MUFAST", "C0V0H-B-NOPF-MUFAST", "CMSL7-B-NOPF-MUFAST", "CMSH7-B-NOPF-MUFAST", "CMUL7-B-NOPF-MUFAST", "CMLL7-B-NOPF-MUFAST", "CINT7ZAC-B-NOPF-CENTNOPMD", "CV0H7-B-NOPF-CENTNOPMD", "CMID7-B-NOPF-CENTNOPMD", "CINT7-T-NOPF-CENT", "CV0H7-B-NOPF-CENT ", "CMID7-B-NOPF-CENT "};
     //	fFiredTriggerClass = aod->GetFiredTriggerClasses();
     //  fTriggerCINT7 = (fFiredTriggerClass.Contains( trigNames[0])) ? 1 : 0;
@@ -2699,9 +2717,9 @@ void AliAnalysisTasSEHFTreeCreator::ProcessMuons(AliAODEvent *aod, AliMuonTrackC
 		// first muon lorentz vector
     //		muon1L.SetPxPyPzE(track1->Px(), track1->Py(), track1->Pz(), track1->E());
     //  }
+  }
   
-  
-}						   
+}
 //_________________________________________________________________
 void AliAnalysisTaskSEHFTreeCreator::ProcessMCGen(TClonesArray *arrayMC){
   /// Fill MC gen trees

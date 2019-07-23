@@ -17,6 +17,6 @@
 #pragma link C++ class   AliJetTreeHandler+;
 #pragma link C++ class   AliParticleTreeHandler+;
 #pragma link C++ class   AliTrackletTreeHandler+;
-#pragma link C++ class   AliDQTreeHandlerSingleMuons++;
+#pragma link C++ class   AliDQTreeHandlerSingleMuons+;
 
 #endif

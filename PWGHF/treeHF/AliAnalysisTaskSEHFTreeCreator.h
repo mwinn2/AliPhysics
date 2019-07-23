@@ -130,7 +130,7 @@ public:
     void Process3Prong(TClonesArray *array3Prong, AliAODEvent *aod, TClonesArray *arrMC, Float_t bfield);
     void ProcessDstar(TClonesArray *arrayDstar, AliAODEvent *aod, TClonesArray *arrMC, Float_t bfield);
     void ProcessCasc(TClonesArray *arrayCasc, AliAODEvent *aod, TClonesArray *arrMC, Float_t bfield);
-    void ProcessMCGen(TClonesArray *mcarray);
+    void ProcessMCGen(TClonesArray *arrayMC);
 
     void ProcessMuons(AliAODEvent *aod, AliMuonTrackCuts *cuts);
   
@@ -138,7 +138,7 @@ public:
     AliAODVertex* ReconstructBplusVertex(const AliVVertex *primary, TObjArray *tracks, Double_t bField, Double_t dispersion);
 
     //TO BE UNDERSTOOD what this is good for
-    Bool_t CheckMuonAcc(TClonesArray* arrayMC, Int_t nProng, Int_t *labpart);
+    //    Bool_t CheckMuonAcc(TClonesArray* arrayMC, Int_t nProng, Int_t *labpart);
     
     
     void SetNsigmaTPCDataDrivenCorrection(Int_t syst) {
