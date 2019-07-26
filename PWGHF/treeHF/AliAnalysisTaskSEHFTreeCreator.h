@@ -136,9 +136,8 @@ public:
   
     Bool_t CheckDaugAcc(TClonesArray* arrayMC,Int_t nProng, Int_t *labDau);
     AliAODVertex* ReconstructBplusVertex(const AliVVertex *primary, TObjArray *tracks, Double_t bField, Double_t dispersion);
-
-    //TO BE UNDERSTOOD what this is good for
-    //    Bool_t CheckMuonAcc(TClonesArray* arrayMC, Int_t nProng, Int_t *labpart);
+    
+    Bool_t CheckMuonAccAndOrigin(TClonesArray* arrayMC, AliAODMCParticle *muon);
     
     
     void SetNsigmaTPCDataDrivenCorrection(Int_t syst) {

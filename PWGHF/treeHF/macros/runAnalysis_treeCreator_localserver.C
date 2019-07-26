@@ -41,6 +41,8 @@ Int_t runlist[nruns] = {246994};
 
 //Task configuration
 TString cutFile="D0DsDplusDstarLcBplusCuts_pp.root";          // file containing the cuts for the different mesons
+//TODO get input from Gian-Michele
+
 // to generate the cut file: 1) move to cutfile directory in the ALICETreeCreator repository
 //                           2) .L makeCutsTreeCreator.C
 //                           3) makeCutsTreeCreator();
@@ -50,7 +52,7 @@ TString cutFile="D0DsDplusDstarLcBplusCuts_pp.root";          // file containing
 //************************************
 
 
-void runAnalysis(Bool_t isRunOnMC=kTRUE)
+void runAnalysis(Bool_t isRunOnMC=kFALSE)
 {
   TGrid::Connect("alien://");
   
@@ -62,7 +64,8 @@ void runAnalysis(Bool_t isRunOnMC=kTRUE)
     std::cout<<"Running on MC"<<std::endl;
   }
   if (isRunOnMC == kFALSE){
-    pathToLocalAODfiles = "/data2/highmultppAOD/data/LHC18f";
+    //    pathToLocalAODfiles = "/data2/highmultppAOD/data/LHC18f";
+    pathToLocalAODfiles = "";
     gridDataDir="/alice/data/2018/LHC18f";
     System=kpp;
   }

@@ -227,7 +227,7 @@ fSystemForNsigmaTPCDataCorr(AliAODPidHF::kNone)
 
 }
 //________________________________________________________________________
-AliAnalysisTaskSEHFTreeCreator::AliAnalysisTaskSEHFTreeCreator(const char *name, TList *cutsList, int fillNJetTrees, bool fillJetConstituentTrees):
+AliAnalysisTaskSEHFTreeCreator::AliAnalysisTaskSEHFTreeCreator(const char *name, TList *cutsList, int fillNJetTrees, bool fillJetConstituentTrees): 
 AliAnalysisTaskSE(name),
 fEventNumber(0),
 fNentries(0x0),
@@ -406,7 +406,7 @@ fSystemForNsigmaTPCDataCorr(AliAODPidHF::kNone)
     if(fEvSelectionCuts){
       delete fEvSelectionCuts;fEvSelectionCuts=NULL;
     }
-    fListCuts=cutsList;
+    fListCuts=cutsList; //TODO add muon cuts in cut file
     
     fFiltCutsD0toKpi      =(AliRDHFCutsD0toKpi*)fListCuts->FindObject("D0toKpiFilteringCuts");
     fFiltCutsDstoKKpi     =(AliRDHFCutsDstoKKpi*)fListCuts->FindObject("DstoKKpiFilteringCuts");
@@ -2689,6 +2689,7 @@ void AliAnalysisTaskSEHFTreeCreator::ProcessMuons(AliAODEvent *aod, AliMuonTrack
     nSelectedMuons++;
  
     fTreeHandlerSingleMuons->SetVariables(fRunNumber, fEventID, ptgen, muon, bfield);
+
     
     //const Char_t *trigNames[14] = { "CINT7-B-NOPF-MUFAST", "C0V0M-B-NOPF-MUFAST", "C0VSC-B-NOPF-MUFAST", "C0V0H-B-NOPF-MUFAST", "CMSL7-B-NOPF-MUFAST", "CMSH7-B-NOPF-MUFAST", "CMUL7-B-NOPF-MUFAST", "CMLL7-B-NOPF-MUFAST", "CINT7ZAC-B-NOPF-CENTNOPMD", "CV0H7-B-NOPF-CENTNOPMD", "CMID7-B-NOPF-CENTNOPMD", "CINT7-T-NOPF-CENT", "CV0H7-B-NOPF-CENT ", "CMID7-B-NOPF-CENT "};
     //	fFiredTriggerClass = aod->GetFiredTriggerClasses();
@@ -2825,7 +2826,15 @@ void AliAnalysisTaskSEHFTreeCreator::ProcessMCGen(TClonesArray *arrayMC){
           }
         }
       }
-    }  
+
+      if(absPDG==13 && fWriteVariableTreeSingleMuons) {
+	Bool_t isMuonAccAndOrigin = kFALSE;
+	isMuonAccAndOrigin = CheckMuonAccAndOrigin(arrayMC,mcPart);
+	if(!isMuonAccAndOrigin) continue;
+	fTreeHandlerSingleMuons->SetMCGenVariables(fRunNumber,fEventID, mcPart);
+
+      }
+    }
 }
 
 //--------------------------------------------------------
@@ -2845,7 +2854,18 @@ Bool_t AliAnalysisTaskSEHFTreeCreator::CheckDaugAcc(TClonesArray* arrayMC,Int_t 
   }
   return kTRUE;
 }
+//--------------------------------------------------------
+Bool_t AliAnalysisTaskSEHFTreeCreator::CheckMuonAccAndOrigin(TClonesArray* arrayMC, AliAODMCParticle* muon){
+  ///check if track in good eta and pt range
+  //TODO: be defined what is signal and background for single muons analysis
+  
+  Double_t eta = muon->Eta();
+  Double_t pt  = muon->Pt();
+  if( eta<-4.5 || eta>-2.0 || pt<0.5 )
+    return kFALSE;
 
+  return kTRUE;
+}
 //________________________________________________________________
 AliAODVertex* AliAnalysisTaskSEHFTreeCreator::ReconstructBplusVertex(const AliVVertex *primary, TObjArray *tracks, Double_t bField, Double_t dispersion) {
     //

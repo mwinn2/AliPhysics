@@ -22,31 +22,30 @@ class AliDQTreeHandlerSingleMuons : public TObject
 {
   public:
 
-  enum candtype{
+  enum candtype{//TODO introduce things that make sense for single muons
     kSelected         = BIT(0),
     kSignal           = BIT(1),
     kBkg              = BIT(2),
-    kPrompt           = BIT(3),
-    kFD               = BIT(4),
-    kRefl             = BIT(5),
+    kCharm            = BIT(3),
+    kBeauty           = BIT(4),
+    kQuarkonia        = BIT(5),
     kSelectedTopo     = BIT(6),
     kSelectedPID      = BIT(7),
     kSelectedTracks   = BIT(8),
-    //    kMFTmatch  //empty for now for Run 2
   };
   
   
   //optPID something about MID
+  //for Run 2 just trigger match
   enum optpid {// check if 
     kNoMID, //trigger
     kMID
   };
   
-     enum optsingletrack {
-       kNoSingleTrackVars, // single-track vars off
-       kRedSingleTrackVars, // only pT, p, eta, phi
-       kAllSingleTrackVars // all single-track vars
-     };
+  enum optsingletrack {//TODO: does it make sense?
+    kNoSingleTrackVars, // single-track vars off
+    kSingleTrackVars // only pT, p, eta, phi
+  };
     
     AliDQTreeHandlerSingleMuons();
 
@@ -74,7 +73,7 @@ class AliDQTreeHandlerSingleMuons : public TObject
     void SetOptSingleTrackVars(int opt) {fSingleTrackOpt=opt;}
     void SetFillOnlySignal(bool fillopt=true) {fFillOnlySignal=fillopt;}
 
-    void SetCandidateType(bool issignal, bool isbkg, bool isprompt, bool isFD, bool isreflected);
+    void SetCandidateType(bool issignal, bool isbkg, bool ischarm, bool isbeauty, bool isquarkonia);
     void SetIsSelectedStd(bool isselected, bool isselectedTopo, bool isselectedPID, bool isselectedTracks) {
       if(isselected) fCandType |= kSelected;
       else fCandType &= ~kSelected;
@@ -100,15 +99,18 @@ class AliDQTreeHandlerSingleMuons : public TObject
       if(candtype>>2&1) return true;
       return false;
     }
-    static bool IsPrompt(int candtype) {
+    static bool IsCharm(int candtype) {
       if(candtype>>3&1) return true;
       return false;
     }
-    static bool IsFD(int candtype) {
+    static bool IsBeauty(int candtype) {
       if(candtype>>4&1) return true;
       return false;
     }
-    //    static bool IsRefl(int cand) makes no sense for single
+    static bool IsQuarkonia(int candtype) {
+      if(candtype>>5&1) return true;
+      return false;
+    }
     static bool IsSelectedStdTopo(int candtype) {
       if(candtype>>6&1) return true;
       return false;
@@ -131,39 +133,42 @@ class AliDQTreeHandlerSingleMuons : public TObject
     
     const float kCSPEED = 2.99792457999999984e-02; // cm / ps
 
+    void AddSingleTrackBranches();
+    void AddPIDBranches();
     //TODO
-    //    void AddSingleTrackBranches();
-    //  void AddPIDBranches();
-    //TODO
-    //    bool SetSingleTrackVars(AliAODTrack* tracks[]);
-    // bool SetPidVars(AliAODTrack* tracks[]);
+    bool SetSingleTrackVars(AliAODTrack* muon);
+    bool SetPidVars(AliAODTrack* track);
 
     
     TTree* fTreeVar; /// tree with variables
+    //TODO: the following variables are not filled so far
+    // remove all of that??? -> yes
     unsigned int fNProngs;///number of prongs: muon + MFT tracklets
     unsigned int fNCandidates; /// number of candidates in one fill (event)
     int fCandType; /// flag for candidate type (bit map above)
+    //TODO: candtype:check !
     float fInvMass; ///candidate invariant mass: for MFT tracklet + muon: could estimate momentum from transverse plane balance of both tracks w.r.t. line of flight -> get momentum tracklet, get mass of 2-track system, similar for following variables...
     float fPt; ///candidate pt
+    float fP; //candidate momentum
     float fPtGen; ///generated candidate pt
     float fY; ///candidate rapidity
     float fEta; ///candidate pseudorapidity
     float fPhi; //candidate azimuthal angle
+    Short_t fCharge;//candidate charge
+    float fDCA; //DCA of muon 
     float fDecayLength; ///candidate decay length, only with at least 2 prongs useful
     float fDecayLengthNorm; ///candidate decay length normalised, only with at least 2 prongs
     float fDecayLengthZ; ///candidate decay length in the longitudinal direction
     float fNormDecayLengthZ; ///candidate normalised decay length in the beam direction
     //    float fCosP; ///candidate cosine of pointing angle (makes only sense if some dummy hypothesis about momenta of MFT tracks, since semileptonic, not too much sense.), same for impact parameter on candidate level, rather muons
-    float fMuonDCA; //DCA of muon
-    float fMuonP; ///muon momentum
-    float fMuonPt;//muon pt
-    float fMuonEta;///Muon pseudorapidity
-    float fMuonPhi;///Muon phi
     float fMuonChi2perNDF;///muon track chi2/ndf
+    float fRatAbsorberEnd;///R at end of absorber
+    bool fHasMFT;/// muon track has a MFT tracklet
+    float fMuonMatchChi2perNDF;//muon chi2 for matching with trigger stations
     float fMFTChi2perNDFProng[knMaxProngs];///MFT chi2perNDF for all prongs
     int fMFTclsProng[knMaxProngs];///number of prong MFT clusters
     int fMuonMCHcls;///number of Muon chamber cluster
-    float fMIDPID;//just one variable for Muon ID to be expanded! should be a neural network, which optimises muon-id
+    int fMIDPID;//just one variable for Muon ID to be expanded! should be a neural network, which optimises muon-id
     int fPidOpt;///option for PID variables
     int fSingleTrackOpt; ///option for single-track variables
     bool fFillOnlySignal; ///flag to enable only signal filling
