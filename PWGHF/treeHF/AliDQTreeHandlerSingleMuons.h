@@ -28,10 +28,11 @@ class AliDQTreeHandlerSingleMuons : public TObject
     kBkg              = BIT(2),
     kCharm            = BIT(3),
     kBeauty           = BIT(4),
-    kQuarkonia        = BIT(5),
-    kSelectedTopo     = BIT(6),
-    kSelectedPID      = BIT(7),
-    kSelectedTracks   = BIT(8),
+    kEW               = BIT(5),
+    kQuarkonia        = BIT(6),
+    kSelectedTopo     = BIT(7),
+    kSelectedPID      = BIT(8),
+    kSelectedTracks   = BIT(9),
   };
   
   
@@ -55,7 +56,7 @@ class AliDQTreeHandlerSingleMuons : public TObject
     bool SetVariables(int runnumber, unsigned int eventID, float ptgen, AliAODTrack* cand, float bfield);
 
     TTree* BuildTreeMCGen(TString name, TString title);
-    bool SetMCGenVariables(int runnumber, unsigned int eventID, AliAODMCParticle* mcpart);
+    bool SetMCGenVariables(int runnumber, unsigned int eventID, AliAODMCParticle* mcpart, unsigned int pdgmother, unsigned int pdggdmother);
 
     void FillTree() {
       if(fFillOnlySignal && !(fCandType&kSignal)) {
@@ -73,7 +74,7 @@ class AliDQTreeHandlerSingleMuons : public TObject
     void SetOptSingleTrackVars(int opt) {fSingleTrackOpt=opt;}
     void SetFillOnlySignal(bool fillopt=true) {fFillOnlySignal=fillopt;}
 
-    void SetCandidateType(bool issignal, bool isbkg, bool ischarm, bool isbeauty, bool isquarkonia);
+    void SetCandidateType(bool issignal, bool isbkg, bool ischarm, bool isbeauty, bool isew, bool isquarkonia);
     void SetIsSelectedStd(bool isselected, bool isselectedTopo, bool isselectedPID, bool isselectedTracks) {
       if(isselected) fCandType |= kSelected;
       else fCandType &= ~kSelected;
@@ -126,10 +127,6 @@ class AliDQTreeHandlerSingleMuons : public TObject
 
  protected:
 
-    //constant variables
-    static const unsigned int knMaxProngs = 3;
-    //Prong: Muon + MFT standalone tracklet
-
     
     const float kCSPEED = 2.99792457999999984e-02; // cm / ps
 
@@ -143,7 +140,6 @@ class AliDQTreeHandlerSingleMuons : public TObject
     TTree* fTreeVar; /// tree with variables
     //TODO: the following variables are not filled so far
     // remove all of that??? -> yes
-    unsigned int fNProngs;///number of prongs: muon + MFT tracklets
     unsigned int fNCandidates; /// number of candidates in one fill (event)
     int fCandType; /// flag for candidate type (bit map above)
     //TODO: candtype:check !
@@ -155,18 +151,15 @@ class AliDQTreeHandlerSingleMuons : public TObject
     float fEta; ///candidate pseudorapidity
     float fPhi; //candidate azimuthal angle
     Short_t fCharge;//candidate charge
-    float fDCA; //DCA of muon 
-    float fDecayLength; ///candidate decay length, only with at least 2 prongs useful
-    float fDecayLengthNorm; ///candidate decay length normalised, only with at least 2 prongs
-    float fDecayLengthZ; ///candidate decay length in the longitudinal direction
-    float fNormDecayLengthZ; ///candidate normalised decay length in the beam direction
-    //    float fCosP; ///candidate cosine of pointing angle (makes only sense if some dummy hypothesis about momenta of MFT tracks, since semileptonic, not too much sense.), same for impact parameter on candidate level, rather muons
+    float fDCA; //DCA of muon is dcaxy at the moment in aod
+    float fDCAxy;//
+    float fDCAz;
     float fMuonChi2perNDF;///muon track chi2/ndf
     float fRatAbsorberEnd;///R at end of absorber
     bool fHasMFT;/// muon track has a MFT tracklet
     float fMuonMatchChi2perNDF;//muon chi2 for matching with trigger stations
-    float fMFTChi2perNDFProng[knMaxProngs];///MFT chi2perNDF for all prongs
-    int fMFTclsProng[knMaxProngs];///number of prong MFT clusters
+    float fMFTChi2perNDF;///MFT chi2perNDF for all prongs
+    int fMFTcls;///number of prong MFT clusters
     int fMuonMCHcls;///number of Muon chamber cluster
     int fMIDPID;//just one variable for Muon ID to be expanded! should be a neural network, which optimises muon-id
     int fPidOpt;///option for PID variables
@@ -174,13 +167,15 @@ class AliDQTreeHandlerSingleMuons : public TObject
     bool fFillOnlySignal; ///flag to enable only signal filling
     bool fIsMCGenTree; ///flag to know if is a tree for MC generated particles
     bool fTrackInAcceptance; ///flag to know if the track is in acceptance in case of MC gen
+    unsigned int fabsPDGmother; ///abs PDG mother particle number for MC
+    unsigned int fabsPDGgdmother;///abs PDG grandmother particle number for MC
     unsigned int fEvID; ///event ID corresponding to  the one set in fTreeEvChar
     int fRunNumber; ///run number
     int fRunNumberPrevCand; ///run number of previous candidate
     
 
-    float fImpParProng[knMaxProngs]; ///prong impact parameter
-    float fImpParErrProng[knMaxProngs]; ///error on prongs rphi impact param [cm]
+    float fImpPar; ///prong impact parameter
+    float fImpParErr; ///error on prongs rphi impact param [cm]
 
     /// \cond CLASSIMP
     ClassDef(AliDQTreeHandlerSingleMuons,3); ///  what does the number mean afterwards?

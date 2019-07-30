@@ -15,7 +15,6 @@
 #include <limits>
 #include <TString.h>
 #include "AliDQTreeHandlerSingleMuons.h"
-//#include "AliAODRecoDecayHF2Prong.h"//TBC
 
 /// \cond CLASSIMP
 ClassImp(AliDQTreeHandlerSingleMuons);
@@ -25,7 +24,7 @@ ClassImp(AliDQTreeHandlerSingleMuons);
 AliDQTreeHandlerSingleMuons::AliDQTreeHandlerSingleMuons():
   TObject(),
   fTreeVar(nullptr),
-  fNProngs(-1),
+  fNCandidates(0),
   fCandType(0),
   fInvMass(-9999.),
   fPt(-9999.),
@@ -34,11 +33,10 @@ AliDQTreeHandlerSingleMuons::AliDQTreeHandlerSingleMuons():
   fY(-9999.),
   fEta(-9999.),
   fPhi(-9999.),
-  fDecayLength(-9999.),
-  fDecayLengthNorm(-9999.),
-  fDecayLengthZ(-9999.),
-  fNormDecayLengthZ(-9999.),
-  fDCA(-9999.),
+  fCharge(-9999.),
+  fDCA(-9999),
+  fDCAxy(-9999.),
+  fDCAz(-9999.),
   fMuonChi2perNDF(-9999.),
   fRatAbsorberEnd(-9999.),
   fHasMFT(false),
@@ -50,22 +48,17 @@ AliDQTreeHandlerSingleMuons::AliDQTreeHandlerSingleMuons():
   fFillOnlySignal(false),
   fIsMCGenTree(false),
   fTrackInAcceptance(false),
+  fabsPDGmother(9999),
+  fabsPDGgdmother(9999),
   fEvID(9999),
   fRunNumber(9999),
-  fRunNumberPrevCand(9999)
+  fRunNumberPrevCand(9999),
+  fMFTChi2perNDF(-999.),
+  fMFTcls(-1)
 {
   //
   // Default constructor
   //
-
-  fNProngs=1; // --> cannot be changed
-  //keep for the moment only the single muon
-  for(unsigned int iProng=0; iProng<fNProngs; iProng++) {
-    fMFTChi2perNDFProng[iProng] = -9999.;
-    fMFTclsProng[iProng] = -9999.;
-    fImpParProng[iProng] = -9999.;
-    fImpParErrProng[iProng] = -9999.;
-  }
 }
 
 //________________________________________________________________
@@ -92,24 +85,23 @@ TTree* AliDQTreeHandlerSingleMuons::BuildTree(TString name, TString title)
   fTreeVar = new TTree(name.Data(),title.Data());
   fTreeVar->Branch("run_number",&fRunNumber);
   fTreeVar->Branch("ev_id",&fEvID);
+  fTreeVar->Branch("n_cand",&fNCandidates);
   fTreeVar->Branch("cand_type",&fCandType);
   fTreeVar->Branch("pt_cand",&fPt);
   fTreeVar->Branch("p_cand",&fP);
   fTreeVar->Branch("y_cand",&fY);
   fTreeVar->Branch("eta_cand",&fEta);
   fTreeVar->Branch("phi_cand",&fPhi);
-  fTreeVar->Branch("d_len",&fDecayLength);
-  fTreeVar->Branch("norm_dl",&fDecayLengthNorm);
-  fTreeVar->Branch("d_len_z",&fDecayLengthZ);
-  fTreeVar->Branch("norm_dl_z",&fNormDecayLengthZ);
+  fTreeVar->Branch("charge_cand",&fCharge);
   fTreeVar->Branch("muon_dca",&fDCA);
+  fTreeVar->Branch("muon_dcaxy",&fDCAxy);
+  fTreeVar->Branch("muon_dcaz",&fDCAz);
   fTreeVar->Branch("muon_chi2perndf",&fMuonChi2perNDF);
   fTreeVar->Branch("muon_muonmchcls",&fMuonMCHcls);
   fTreeVar->Branch("muon_midpid",&fMIDPID);
   
   //set single track variables specific to muon arm
   AddSingleTrackBranches();
-
 
   //set PID variables
   if(fPidOpt!=kNoMID) AddPIDBranches(); 
@@ -120,14 +112,11 @@ TTree* AliDQTreeHandlerSingleMuons::BuildTree(TString name, TString title)
 void AliDQTreeHandlerSingleMuons::AddSingleTrackBranches(){
 
   if(fSingleTrackOpt==kNoSingleTrackVars) return;
-
-  for(unsigned int iProng=0; iProng<fNProngs; iProng++) {
-    
-    if(fSingleTrackOpt==kSingleTrackVars) {
-      fTreeVar->Branch("muon_chi2perndf", &fMuonChi2perNDF);
-      fTreeVar->Branch("muon_ratabsorberend", &fRatAbsorberEnd);
-    }
-  }
+  
+  fTreeVar->Branch("muon_chi2perndf", &fMuonChi2perNDF);
+  fTreeVar->Branch("muon_ratabsorberend", &fRatAbsorberEnd);
+  fTreeVar->Branch("muon_fMFTChi2perNDF", &fMuonChi2perNDF);
+  fTreeVar->Branch("muon_fMFTcls", &fMFTcls);
   
 }
 //_______________________________________________________________
@@ -157,13 +146,13 @@ TTree* AliDQTreeHandlerSingleMuons::BuildTreeMCGen(TString name, TString title) 
   fTreeVar->Branch("phi_cand",&fPhi);
   fTreeVar->Branch("charge_cand",fCharge);
   fTreeVar->Branch("track_in_acc",&fTrackInAcceptance);
-
+  fTreeVar->Branch("absPDGmother",&fabsPDGmother);
+  fTreeVar->Branch("absPDGgdmother",&fabsPDGmother);
   return fTreeVar;
 
 }
 //________________________________________________________________
 bool AliDQTreeHandlerSingleMuons::SetVariables(int runnumber, unsigned int eventID, float ptgen, AliAODTrack* cand, float bfield) 
-//needs to be changed to standard Dimuons, is there already an object like that?
 {
   fIsMCGenTree=false;
 
@@ -178,20 +167,17 @@ bool AliDQTreeHandlerSingleMuons::SetVariables(int runnumber, unsigned int event
   
   //topological variables
   //common
-  fPt=cand->Pt();// TODO all to be changed from a dimuon
+  fPt=cand->Pt();
   fP=cand->P();
   fY=cand->Y(1);//TBC: 1 should be muon
   fEta=cand->Eta();
   fPhi=cand->Phi();
   fCharge=cand->Charge();
-  fDecayLength= 0.0; //to be seen how to do best to get it from AOD in principle, just vector length between PV and seconary vertex
-  fDecayLengthZ= 0.0; //cand->DecayLengthXY(); idem
-  fNormDecayLengthZ= 0.0; //cand->NormalizedDecayLengthXY();
   fDCA=cand->DCA();
-  fDecayLengthNorm= 0.0; //cand->NormalizedDecayLength();
+  fDCAxy=TMath::Sqrt(cand->XAtDCA()*cand->XAtDCA()+cand->YAtDCA()*cand->YAtDCA());//in AOD the same as DCA!
+  fDCAz=cand->ZAtDCA();
+  //MFT related variables to be filled
   
-  //D0 -> Kpi variables
-
   fInvMass= 0; //to be done with two prongs
 
   SetSingleTrackVars(cand);
@@ -201,7 +187,7 @@ bool AliDQTreeHandlerSingleMuons::SetVariables(int runnumber, unsigned int event
   return true;
 }
 //________________________________________________________________
-bool AliDQTreeHandlerSingleMuons::SetMCGenVariables(int runnumber, unsigned int eventID, AliAODMCParticle* mcpart){
+bool AliDQTreeHandlerSingleMuons::SetMCGenVariables(int runnumber, unsigned int eventID, AliAODMCParticle* mcpart, unsigned int pdgmother, unsigned int pdggdmother ){
   
 
   if(!mcpart) return false;
@@ -213,11 +199,13 @@ bool AliDQTreeHandlerSingleMuons::SetMCGenVariables(int runnumber, unsigned int 
   fY = mcpart->Y();
   fEta = mcpart->Eta();
   fPhi = mcpart->Phi();
+  fabsPDGmother = pdgmother;
+  fabsPDGgdmother = pdggdmother;
 
   return true;
 }
 //________________________________________________________________
-void AliDQTreeHandlerSingleMuons::SetCandidateType(bool issignal, bool isbkg, bool ischarm, bool isbeauty, bool isquarkonia)
+void AliDQTreeHandlerSingleMuons::SetCandidateType(bool issignal, bool isbkg, bool ischarm, bool isbeauty, bool isew, bool isquarkonia)
 { 
   if(issignal) fCandType |= kSignal;
   else fCandType &= ~kSignal;
@@ -227,6 +215,8 @@ void AliDQTreeHandlerSingleMuons::SetCandidateType(bool issignal, bool isbkg, bo
   else fCandType &= ~kCharm;
   if(isbeauty) fCandType |= kBeauty;
   else fCandType &= ~kBeauty;
+  if(isew) fCandType |= kEW;
+  else fCandType &= ~kEW;
   if(isquarkonia && !fIsMCGenTree) fCandType |= kQuarkonia;
   else fCandType &= ~kQuarkonia;
 }
@@ -238,14 +228,11 @@ bool AliDQTreeHandlerSingleMuons::SetSingleTrackVars(AliAODTrack* muon){
 
   if(fSingleTrackOpt==kSingleTrackVars) {
     //chi2perNDF
-    fMuonChi2perNDF = muon->Chi2perNDF();//check if write for muons
+    fMuonChi2perNDF = muon->Chi2perNDF();//check if correct for muons
     //R at entrance of absorber
     fRatAbsorberEnd = muon->GetRAtAbsorberEnd();
-    //add number of muon clusters
-
-    //add number of MFT clusters
-
-    //
+    //add number of muon clusters TODO
+    //add number of MFT clusters TODO
   }
 
 

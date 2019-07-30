@@ -706,8 +706,7 @@ void AliAnalysisTaskSEHFTreeCreator::UserCreateOutputObjects()
     if(fDebug > 1) printf("AliAnalysisTaskSEHFTreeCreator::UserCreateOutputObjects() \n");
     
     const char* nameoutput=GetOutputSlot(1)->GetContainer()->GetName();
-    fNentries=new TH1F(nameoutput, "Number of events", 38,-0.5,37.5);
-    //TBD muons: add number of CMUL7 events (for Run 3 to be thought about), events rejected
+    fNentries=new TH1F(nameoutput, "Number of events", 41,-0.5,40.5);
     fNentries->GetXaxis()->SetBinLabel(1,"n. evt. read");
     fNentries->GetXaxis()->SetBinLabel(2,"n. evt. matched dAOD");
     fNentries->GetXaxis()->SetBinLabel(3,"n. evt. mismatched dAOD");
@@ -744,7 +743,12 @@ void AliAnalysisTaskSEHFTreeCreator::UserCreateOutputObjects()
     fNentries->GetXaxis()->SetBinLabel(34,"n. Lc2V0bachelor after filtering");
     fNentries->GetXaxis()->SetBinLabel(35,"n. Lc2V0bachelor after selection");
     fNentries->GetXaxis()->SetBinLabel(36,"n. of not on-the-fly rec Lc2V0bachelor");
-  
+    fNentries->GetXaxis()->SetBinLabel(37,"n. of single muons cand.");
+    fNentries->GetXaxis()->SetBinLabel(38,"n. of single muons sel.");
+    fNentries->GetXaxis()->SetBinLabel(39,"n. evt. CMSH7 (single muon trigger)");
+    fNentries->GetXaxis()->SetBinLabel(40,"n. evt. CMUL7 (unlike dimuon trigger)");
+    fNentries->GetXaxis()->SetBinLabel(41,"n. evt. CMLL7 (like dimuon trigger)");
+    
     nameoutput=GetOutputSlot(2)->GetContainer()->GetName();
     fHistoNormCounter=new TH2F(nameoutput, "Number of events for norm;;centrality", 5,-0.5,4.5,102,-1.,101.);
     fHistoNormCounter->GetXaxis()->SetBinLabel(1,"n. evt. w primary V");
@@ -2655,57 +2659,52 @@ void AliAnalysisTaskSEHFTreeCreator::ProcessCasc(TClonesArray *arrayCasc, AliAOD
 }
 //_________________________________________________________________
 void AliAnalysisTaskSEHFTreeCreator::ProcessMuons(AliAODEvent *aod, AliMuonTrackCuts *cuts){
-  //check what to do with trigger mask
-  //really needed to loop over all tracks
-  //check n muons
-
-
-    Int_t nMuons = aod->GetNumberOfMuonTracks(); //any way to get this number from ALIAOD without looking?
-    if(nMuons==0) return;
-
-    //TODO add lines in analogy to D0 part
-    float ptgen = -999.;
-    
-    float bfield = aod->GetMuonMagFieldScale();//dipole field for muons
-    //
-    
-  AliAODVertex *vtx1 = (AliAODVertex*) aod->GetPrimaryVertex();
-  Int_t nSelectedMuons=0;
-
-  TRefArray muons; //TODO: check ownership and process iD
-
-  Int_t nMuons2 = aod->GetMuonTracks(&muons);
-  if(nMuons2!=nMuons) return; //TODO alifatal
-
   
-  //  AliAnalysisvertexing *vHF = ;; not needed should be sufficient
+  Int_t nMuons = aod->GetNumberOfMuonTracks();
+  if(nMuons==0)
+    return;
+  
+  float ptgen = -999.;
+  if(fReadMC) {
+    AliAODMCParticle* muonMC = 0x0;
+    //TODO MATCH TO MC...
+    //two ways: via track-points or via momentum matching
+    //fill more variables than pt: phi, eta, p.
+  }
+  
+  //field  for propagation for dimuons, TODO
+  float bfield = aod->GetMuonMagFieldScale();
+  //  AliAODVertex *vtx1 = (AliAODVertex*) aod->GetPrimaryVertex();
+  Int_t nSelectedMuons=0;
+  TRefArray muons; //TODO: check ownership and process iD
+  
+  Int_t nMuons2 = aod->GetMuonTracks(&muons);
+  if(nMuons2!=nMuons) AliFatal("Muon numbers from AODS not consistent"); 
+  
   for (Int_t imuons = 0; imuons < nMuons; ++imuons){
-    
-
+    fNentries->Fill(36);
     AliAODTrack* muon = (AliAODTrack*) muons.At(imuons);
-    //need to use AliMuonCuts
+    //use AliMuonCuts
     if(!cuts->IsSelected(muon)) continue;
-    //some additional trigger selection?   
+    fNentries->Fill(37);
     nSelectedMuons++;
- 
-    fTreeHandlerSingleMuons->SetVariables(fRunNumber, fEventID, ptgen, muon, bfield);
-
     
-    //const Char_t *trigNames[14] = { "CINT7-B-NOPF-MUFAST", "C0V0M-B-NOPF-MUFAST", "C0VSC-B-NOPF-MUFAST", "C0V0H-B-NOPF-MUFAST", "CMSL7-B-NOPF-MUFAST", "CMSH7-B-NOPF-MUFAST", "CMUL7-B-NOPF-MUFAST", "CMLL7-B-NOPF-MUFAST", "CINT7ZAC-B-NOPF-CENTNOPMD", "CV0H7-B-NOPF-CENTNOPMD", "CMID7-B-NOPF-CENTNOPMD", "CINT7-T-NOPF-CENT", "CV0H7-B-NOPF-CENT ", "CMID7-B-NOPF-CENT "};
-    //	fFiredTriggerClass = aod->GetFiredTriggerClasses();
-    //  fTriggerCINT7 = (fFiredTriggerClass.Contains( trigNames[0])) ? 1 : 0;
-    //  fTriggerC0V0M = (fFiredTriggerClass.Contains( trigNames[1])) ? 1 : 0;
-    //  fTriggerC0VSC = (fFiredTriggerClass.Contains( trigNames[2])) ? 1 : 0;
-    //  fTriggerC0V0H = (fFiredTriggerClass.Contains( trigNames[3])) ? 1 : 0;
-    //	fTriggerCMSL7 = (fFiredTriggerClass.Contains( trigNames[4])) ? 1 : 0;
-    //	fTriggerCMSH7 = (fFiredTriggerClass.Contains( trigNames[5])) ? 1 : 0;
-    //	fTriggerCMUL7 = (fFiredTriggerClass.Contains( trigNames[6])) ? 1 : 0;
-    //	fTriggerCMLL7 = (fFiredTriggerClass.Contains( trigNames[7])) ? 1 : 0;
-    //  if(fTriggerCMUL7)
-    //		fPassTriggerSelection = 1;
-    //	else
-    //		fPassTriggerSelection = 0;
-    //Charm or beauty mouns 
+    const Char_t *trigNames[14] = { "CINT7-B-NOPF-MUFAST", "C0V0M-B-NOPF-MUFAST", "C0VSC-B-NOPF-MUFAST", "C0V0H-B-NOPF-MUFAST", "CMSL7-B-NOPF-MUFAST", "CMSH7-B-NOPF-MUFAST", "CMUL7-B-NOPF-MUFAST", "CMLL7-B-NOPF-MUFAST", "CINT7ZAC-B-NOPF-CENTNOPMD", "CV0H7-B-NOPF-CENTNOPMD", "CMID7-B-NOPF-CENTNOPMD", "CINT7-T-NOPF-CENT", "CV0H7-B-NOPF-CENT ", "CMID7-B-NOPF-CENT "};
+    TString firedTriggerClass = aod->GetFiredTriggerClasses();
+    bool triggerCINT7 = (firedTriggerClass.Contains( trigNames[0])) ? 1 : 0;
+    bool triggerC0V0M = (firedTriggerClass.Contains( trigNames[1])) ? 1 : 0;
+    bool triggerC0VSC = (firedTriggerClass.Contains( trigNames[2])) ? 1 : 0;
+    bool triggerC0V0H = (firedTriggerClass.Contains( trigNames[3])) ? 1 : 0;
+    bool triggerCMSL7 = (firedTriggerClass.Contains( trigNames[4])) ? 1 : 0;
+    bool triggerCMSH7 = (firedTriggerClass.Contains( trigNames[5])) ? 1 : 0;
+    bool triggerCMUL7 = (firedTriggerClass.Contains( trigNames[6])) ? 1 : 0;
+    bool triggerCMLL7 = (firedTriggerClass.Contains( trigNames[7])) ? 1 : 0;
+    if(triggerCMSH7) fNentries->Fill(38);
+    if(triggerCMUL7) fNentries->Fill(39);
+    if(triggerCMLL7) fNentries->Fill(40);
+
+     fTreeHandlerSingleMuons->SetVariables(fRunNumber, fEventID, ptgen, muon, bfield);
+    //TODO: Dimuon
     //AliAODTrack *track1;
     //	AliAODTrack *track2;
     //	Dimuon *dimuon;
@@ -2828,13 +2827,45 @@ void AliAnalysisTaskSEHFTreeCreator::ProcessMCGen(TClonesArray *arrayMC){
       }
 
       if(absPDG==13 && fWriteVariableTreeSingleMuons) {
+
+	//TODO: should do this only for muon acceptance!!!!
+	Bool_t isSignal = kFALSE;
+	Bool_t isBkg = kTRUE;
+	Bool_t isCharm = kFALSE;
+	Bool_t isBeauty = kFALSE;
+	Bool_t isQuarkonium = kFALSE;
+	Bool_t isEW = kFALSE;
+	//get mother PDG code
+	AliAODMCParticle* mcMother =  dynamic_cast<AliAODMCParticle*>(arrayMC->At(mcPart->GetMother()));
+	AliAODMCParticle* mcGDMother = dynamic_cast<AliAODMCParticle*>(arrayMC->At(mcMother->GetMother()));
+	Int_t absPDGmo = TMath::Abs(mcMother->GetPdgCode());
+	Int_t absPDGgdmo = TMath::Abs(mcGDMother->GetPdgCode());
+	if(absPDGmo == 411 || absPDGmo == 421 || absPDGmo == 431  || absPDGmo == 4122 || absPDGmo == 521 || absPDGmo == 413 || absPDGmo == 511 || absPDGmo == 443 || absPDGmo == 100443 || absPDGmo == 531 || absPDGmo == 541 || absPDGmo == 553 || absPDGmo == 100553 || absPDGmo == 200553 || absPDGmo == 21 || absPDGmo == 22 || absPDGmo == 23) //Dstar, etac not needed: strong/e.m. decay to ground states before weak one with muon...
+	  { isSignal = kTRUE;
+	    isBkg = kFALSE;
+	    if(absPDGmo == 411 || absPDGmo == 421 || absPDGmo == 431 || absPDGmo == 4122 || absPDGmo == 413)
+	      {
+		if(absPDGgdmo != 521 || absPDGgdmo != 511 || absPDGgdmo != 531 || absPDGgdmo != 541 )
+		  {isCharm = kTRUE; } else{
+		  isBeauty = kTRUE;
+		}
+	      } else if(absPDGmo == 521 || absPDGmo == 511 || absPDGmo == 531 || absPDGmo == 541 ){
+	      isBeauty = kTRUE;
+	    }else if(absPDGmo == 443 || absPDGmo == 100443 || absPDGmo == 553 || absPDGmo == 100553 || absPDGmo == 200553)
+	      isQuarkonium = kTRUE;
+	    
+	  }else if(absPDGmo == 21 || absPDGmo == 22 || absPDGmo == 23){
+	  isEW = kTRUE;
+	}
+	fTreeHandlerSingleMuons->SetCandidateType(isSignal,isBkg,isCharm,isBeauty,isEW,isQuarkonium);
+	
 	Bool_t isMuonAccAndOrigin = kFALSE;
 	isMuonAccAndOrigin = CheckMuonAccAndOrigin(arrayMC,mcPart);
 	if(!isMuonAccAndOrigin) continue;
-	fTreeHandlerSingleMuons->SetMCGenVariables(fRunNumber,fEventID, mcPart);
+	fTreeHandlerSingleMuons->SetMCGenVariables(fRunNumber,fEventID, mcPart,absPDGmo,absPDGgdmo);
 
       }
-    }
+  }
 }
 
 //--------------------------------------------------------
