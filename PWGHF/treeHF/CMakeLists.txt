@@ -53,6 +53,7 @@ set(SRCS
   AliParticleTreeHandler.cxx
   AliTrackletTreeHandler.cxx
   AliDQTreeHandlerSingleMuons.cxx
+  AliDQTreeHandlerDiMuons.cxx
   )
 
 # Headers from sources

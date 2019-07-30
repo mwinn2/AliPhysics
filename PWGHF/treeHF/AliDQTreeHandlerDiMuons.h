@@ -17,15 +17,24 @@
 #include <TTree.h>
 #include "AliAODTrack.h"
 #include "AliAODMCParticle.h"
+#include "AliAODDimuon.h"
 
 class AliDQTreeHandlerDiMuons : public TObject
 {
   public:
     
   enum candtype{//check if name is
-    kMFTmatchnone,
-    kMFTmatchsingle,//
-    kMFTmatchboth//
+   kSelected         = BIT(0),
+   kSignal           = BIT(1),
+   kBkg              = BIT(2),
+   kPrompt           = BIT(3),
+   kBeauty           = BIT(4),
+   kCharmonium       = BIT(5),
+   kBottomonium      = BIT(6),
+   kEW               = BIT(7),
+   kSelectedTopo     = BIT(8),
+   kSelectedPID      = BIT(9),
+   kSelectedTracks   = BIT(10),    
   };
 
   enum optpid {//shall this mean, not filled or not required?
@@ -38,18 +47,18 @@ class AliDQTreeHandlerDiMuons : public TObject
     kNoSingleTrackVars, //single-track vars off
     kRedSingleTrackVars, // only pt, p, eta, phi
     kAllSingleTrackVars // all single-track vars
-  }
+  };
     
     AliDQTreeHandlerDiMuons();
 
     virtual ~AliDQTreeHandlerDiMuons();
 
     TTree* BuildTree(TString name, TString title);
-    bool SetVariables(int runnumber, unsigned int eventID, float ptgen, AliAODRecoDecayHF* cand, float bfiled, int masshypo=0);
+    bool SetVariables(int runnumber, unsigned int eventID, float ptgen, AliAODDimuon* cand, float bfield);
     //ToDo check mass hypothesis ting
     
     TTree* BuildTreeMCGen(TString name, TString title);
-    bool SetMCGenVariables(int runnumber, unsigned int eventID, AliAODMCParticle* mcpart);
+    bool SetMCGenVariables(int runnumber, unsigned int eventID, AliAODMCParticle* mcpart, unsigned int pdgmother, unsigned int pdggdmother);//todo pass also daugther tracks?
 
     void FillTree() {
       if(fFillOnlySignal && !(fCandType&kSignal)) {
@@ -66,18 +75,18 @@ class AliDQTreeHandlerDiMuons : public TObject
     void SetOptSingleTrackVars(int opt) {fSingleTrackOpt=opt;}
     void SetFillOnlySignal(bool fillopt=true) {fFillOnlySignal=fillopt;}
 
-    void SetCandidateType(bool issignal, bool isbkg, bool isprompt, bool isFD, bool isreflected);
+    void SetCandidateType(bool issignal, bool isbkg, bool isprompt, bool isbeauty, bool ischarmonia, bool isbottomonia, bool isew);
     void SetIsSelectedStd(bool isselected, bool isselectedTopo, bool isselectedPID, bool isselectedTracks) {
       if(isselected) fCandType |= kSelected;
       else fCandType &= ~kSelected;
-      if(isselectedTopo) fCandType |= fSelectedTopo;
-      else fCandType & =~kSelectedPID;
+      if(isselectedTopo) fCandType |= kSelectedTopo;
+      else fCandType &= ~kSelectedPID;
       if(isselectedTracks) fCandType |= kSelectedTracks;
       else fCandType &= ~kSelectedTracks;
     }
       
 
-    void SetInAcceptance(bool inacc = true ) {fInAcceptance=inacc;}
+    void SetInAcceptance(bool inacc = true ) {fDauInAcceptance=inacc;}
 
     static bool IsSelectedStd(int candtype) {
       if(candtype&1) return true;
@@ -95,21 +104,36 @@ class AliDQTreeHandlerDiMuons : public TObject
       if(candtype>>3&1) return true;
       return false;
     }
-    static bool IsFD(int candtype){
+    static bool IsBeauty(int candtype){
       if(candtype>>4&1) return true;
       return false;
     }
 
-    static bool IsSelectedStdTopo(int candtype){
+    static bool IsCharmonium(int candtype){
+      if(candtype>>5&1) return true;
+      return false;
+    }
+
+    static bool IsBottomonium(int candtype){
       if(candtype>>6&1) return true;
       return false;
     }
 
-    static bool IsSelectedStdPID(int candtype){
+    static bool IsEW(int candtype){
       if(candtype>>7&1) return true;
+      return false;
+    }
+
+    static bool IsSelectedStdTopo(int candtype){
+      if(candtype>>8&1) return true;
+      return false;
+    }
+
+    static bool IsSelectedStdPID(int candtype){
+      if(candtype>>9&1) return true;
     }
     static bool IsSelectedStdTracks(int candtype) {
-      if(candtype>>8&1) return true;
+      if(candtype>>10&1) return true;
       return false;
     }
     
@@ -117,7 +141,7 @@ class AliDQTreeHandlerDiMuons : public TObject
   protected:
 
     //constant variables
-    statc const unsigned int knMaxProngs = 5;
+    static const unsigned int knMaxProngs = 5;
     //Pront: 2x Muons + MFT standalone tracklet
 
     const float kCSPEED = 2.99792457999999984e-02;
@@ -133,24 +157,28 @@ class AliDQTreeHandlerDiMuons : public TObject
     unsigned int fCandType; /// flag for candidate type (bit map above)
     float fInvMass; ///candidate invariant mass: by default dimuon mass
     float fPt; //candidate pt
+    float fP; // candidate momentum
     float fPtGen; ///generated candidate pt
     float fY; ///candidate rapidity
     float fEta; ///candidate pseudorapidity
     float fPhi; //candidate azimuthal angle
     float fDecayLength; ///candidate decay length
-    float fDecayLengthNorm; ///candidate decay length normalised, only with at least two tracks
+    float fNormDecayLength; ///candidate decay length normalised, only with at least two tracks
     float fDecayLengthZ;////candidate decay length in the longitudinal
     float fNormDecayLengthZ; ///candidate normalised decay length in the beam direction
     float fCosP; //candidate cosine of pointing angle
     float fCosPz; ///candidate cosine of pointing angle in the longitudinal direction
-    //CONTINUE HERE
     float fImpParZ; ///candidate impact parameter in the longitudinal direction
     float fDCA[knMaxProngs]; /// DCA of candidates prongs
+    float fDCAz[knMaxProngs];/// DCAz of candidate prongs
     float fPProng[knMaxProngs]; ///prong momentum
     float fMCHPProng[knMaxProngs]; ///prong MCH momentum
     float fPtProng[knMaxProngs]; ///prong pt
+    float fMCHPtProng[knMaxProngs];//prong MCH pt
     float fEtaProng[knMaxProngs];///prong pseudorapidity
+    float fMCHEtaProng[knMaxProngs];///prong MCH eta
     float fPhiProng[knMaxProngs];///prong azimuthal angle
+    float fMCHPhiProng[knMaxProngs];///prong MCH phi angle
     int fNMFTclsProng[knMaxProngs];///prong track number of MFT clusters
     int fMFTclsMapProng[knMaxProngs];///prong track MFT cluster map
     float fNMCHclsProng[knMaxProngs];///prong track number of MCH clusters
@@ -163,8 +191,7 @@ class AliDQTreeHandlerDiMuons : public TObject
     bool fDauInAcceptance; ///flag to know if the daughter are in acceptance in case of MC gen
     unsigned int fEvID; ///event ID correspodning to the one set in FTreeEvChar
     int fRunNumber; ////run number
-    int fRunNumberPrevCand; ///run number of previous candidate
-    
+    int fRunNumberPrevCand; ///run number of previous candidate    
     float fImpParProng[knMaxProngs]; ///prong impact parameter
     float fCosThetaStar; /// candidate costhetastar
     float fImpParProd; /// daughter impact-parameter product
@@ -172,7 +199,7 @@ class AliDQTreeHandlerDiMuons : public TObject
     float fImpParErrProng[knMaxProngs]; ///error on prongs z impact param [cm]
 
     /// \cond CLASSIMP
-    ClassDef(AliHFTreeHandlerD0toKpi,3); /// 
+    ClassDef(AliDQTreeHandlerDiMuons,3); /// 
     /// \endcond
 };
 #endif

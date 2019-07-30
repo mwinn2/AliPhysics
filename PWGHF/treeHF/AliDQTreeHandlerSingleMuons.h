@@ -60,7 +60,6 @@ class AliDQTreeHandlerSingleMuons : public TObject
 
     void FillTree() {
       if(fFillOnlySignal && !(fCandType&kSignal)) {
-
 	fCandType=0;
       }
       else {
@@ -132,17 +131,13 @@ class AliDQTreeHandlerSingleMuons : public TObject
 
     void AddSingleTrackBranches();
     void AddPIDBranches();
-    //TODO
     bool SetSingleTrackVars(AliAODTrack* muon);
     bool SetPidVars(AliAODTrack* track);
 
     
     TTree* fTreeVar; /// tree with variables
-    //TODO: the following variables are not filled so far
-    // remove all of that??? -> yes
     unsigned int fNCandidates; /// number of candidates in one fill (event)
     int fCandType; /// flag for candidate type (bit map above)
-    //TODO: candtype:check !
     float fInvMass; ///candidate invariant mass: for MFT tracklet + muon: could estimate momentum from transverse plane balance of both tracks w.r.t. line of flight -> get momentum tracklet, get mass of 2-track system, similar for following variables...
     float fPt; ///candidate pt
     float fP; //candidate momentum
