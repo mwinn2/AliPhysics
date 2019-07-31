@@ -121,7 +121,7 @@ void AliDQTreeHandlerSingleMuons::AddSingleTrackBranches(){
 }
 //_______________________________________________________________
 void AliDQTreeHandlerSingleMuons::AddPIDBranches(){
-
+  //TODO add additional variables to define better observables (BDT maybe)
   fTreeVar->Branch("muon_midpid", &fMIDPID);
   fTreeVar->Branch("muon_midchi2", &fMuonMatchChi2perNDF);
   fTreeVar->Branch("muon_hasmft", &fHasMFT);
@@ -144,10 +144,10 @@ TTree* AliDQTreeHandlerSingleMuons::BuildTreeMCGen(TString name, TString title) 
   fTreeVar->Branch("y_cand",&fY);
   fTreeVar->Branch("eta_cand",&fEta);
   fTreeVar->Branch("phi_cand",&fPhi);
-  fTreeVar->Branch("charge_cand",fCharge);
+  fTreeVar->Branch("charge_cand",&fCharge);
   fTreeVar->Branch("track_in_acc",&fTrackInAcceptance);
   fTreeVar->Branch("absPDGmother",&fabsPDGmother);
-  fTreeVar->Branch("absPDGgdmother",&fabsPDGmother);
+  fTreeVar->Branch("absPDGgdmother",&fabsPDGgdmother);
   return fTreeVar;
 
 }

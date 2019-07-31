@@ -22,7 +22,7 @@
 class AliDQTreeHandlerDiMuons : public TObject
 {
   public:
-    
+  //TODO add B_c
   enum candtype{//check if name is
    kSelected         = BIT(0),
    kSignal           = BIT(1),
@@ -39,8 +39,7 @@ class AliDQTreeHandlerDiMuons : public TObject
 
   enum optpid {//shall this mean, not filled or not required?
     kNoMID,
-    kMIDsingle,
-    kMIDboth
+    kMID
   };
 
   enum optstrack {
@@ -140,6 +139,7 @@ class AliDQTreeHandlerDiMuons : public TObject
     
   protected:
 
+    
     //constant variables
     static const unsigned int knMaxProngs = 5;
     //Pront: 2x Muons + MFT standalone tracklet
@@ -147,9 +147,9 @@ class AliDQTreeHandlerDiMuons : public TObject
     const float kCSPEED = 2.99792457999999984e-02;
 
     void AddSingleTrackBranches();
-    void AddPIDBranches();
+    void AddPiDBranches();
     bool SetSingleTrackVars(AliAODTrack* tracks[]);
-    bool SetPIDVars(AliAODTrack* tracks[]);
+    bool SetPiDVars(AliAODTrack* tracks[]);
 
     TTree* fTreeVar; //tree with variables
     unsigned int fNProngs; ///number of prongs: muon + MFT tracklets
@@ -166,9 +166,20 @@ class AliDQTreeHandlerDiMuons : public TObject
     float fNormDecayLength; ///candidate decay length normalised, only with at least two tracks
     float fDecayLengthZ;////candidate decay length in the longitudinal
     float fNormDecayLengthZ; ///candidate normalised decay length in the beam direction
+    float fPseudopropertimeZ;///pseudopropertime along z
+    float fPseudopropertimeZres;///pseudopropertime along z, resolution
+    float fPseudopropertimeXY;///pseudopropertime along transvers. plane, XY
+    float fPseudopropertimeXYres;///pseudopropertime along transvers. plane XY res.
     float fCosP; //candidate cosine of pointing angle
     float fCosPz; ///candidate cosine of pointing angle in the longitudinal direction
     float fImpParZ; ///candidate impact parameter in the longitudinal direction
+    float fXF;/// Feynman x
+    float fCostCS;/// Cosinus of the Collins-Sope polar decay angle
+    float fCostHe; ///Cosinus of the Helicity polar decay angle
+    float fPhiCS;////Azimuthal angle in the Hellicity frame
+    float fPhiHe;////Azimuthal angle in the Hellicity frame
+    ///what Jackson etc. name
+    int fCharge[knMaxProngs];
     float fDCA[knMaxProngs]; /// DCA of candidates prongs
     float fDCAz[knMaxProngs];/// DCAz of candidate prongs
     float fPProng[knMaxProngs]; ///prong momentum
@@ -181,9 +192,10 @@ class AliDQTreeHandlerDiMuons : public TObject
     float fMCHPhiProng[knMaxProngs];///prong MCH phi angle
     int fNMFTclsProng[knMaxProngs];///prong track number of MFT clusters
     int fMFTclsMapProng[knMaxProngs];///prong track MFT cluster map
-    float fNMCHclsProng[knMaxProngs];///prong track number of MCH clusters
+    int fNMCHclsProng[knMaxProngs];///prong track MFT cluster map
     int fPidOpt; ///option for PID variables
-    float fMIDchi2perNDF; ///PID variable for matching
+    bool fMIDPID[knMaxProngs];
+    float fMIDchi2perNDF[knMaxProngs]; ///PID variable for matching
     ///anything else for PID?
     int fSingleTrackOpt; ///option for single-track variables
     bool fFillOnlySignal; ///flag to enable only signal filling
@@ -197,7 +209,14 @@ class AliDQTreeHandlerDiMuons : public TObject
     float fImpParProd; /// daughter impact-parameter product
     float fNormjpsiMeasMinusExp; ///candidate topomatic variable
     float fImpParErrProng[knMaxProngs]; ///error on prongs z impact param [cm]
-
+    float fMFTChi2perNDF[knMaxProngs];///number of prong MFT clusters
+    float fMuonChi2perNDF[knMaxProngs];///numberof muon chi2 clusters
+    float fMuonMatchChi2perNDF[knMaxProngs];///numberof muon chi2 clusters
+    float fRatAbsorberEnd[knMaxProngs];///R at end of absorber
+    bool fHasMFTProng[knMaxProngs];///number of prong MFT clusters
+    unsigned int fabsPDGProng[knMaxProngs];///abs. pdg number of prong
+    unsigned int fabsPDGProngmother[knMaxProngs];/// abs. pdg number of mother
+    unsigned int fabsPDGPronggdmother[knMaxProngs];/// abs. pdg gd mother
     /// \cond CLASSIMP
     ClassDef(AliDQTreeHandlerDiMuons,3); /// 
     /// \endcond

@@ -156,7 +156,7 @@ class AliDQTreeHandlerSingleMuons : public TObject
     float fMFTChi2perNDF;///MFT chi2perNDF for all prongs
     int fMFTcls;///number of prong MFT clusters
     int fMuonMCHcls;///number of Muon chamber cluster
-    int fMIDPID;//just one variable for Muon ID to be expanded! should be a neural network, which optimises muon-id
+    int fMIDPID;//just one variable for Muon ID to be defined in future
     int fPidOpt;///option for PID variables
     int fSingleTrackOpt; ///option for single-track variables
     bool fFillOnlySignal; ///flag to enable only signal filling
@@ -168,7 +168,6 @@ class AliDQTreeHandlerSingleMuons : public TObject
     int fRunNumber; ///run number
     int fRunNumberPrevCand; ///run number of previous candidate
     
-
     float fImpPar; ///prong impact parameter
     float fImpParErr; ///error on prongs rphi impact param [cm]
 
