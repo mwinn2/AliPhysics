@@ -41,6 +41,7 @@
 #include "AliRDHFCutsLctoV0.h"
 #include "AliNormalizationCounter.h"
 #include "AliDQTreeHandlerSingleMuons.h"
+#include "AliDQTreeHandlerDiMuons.h"
 #include "AliPIDResponse.h"
 #include "AliHFTreeHandler.h"
 #include "AliHFTreeHandlerD0toKpi.h"
@@ -105,7 +106,7 @@ public:
     void SetFillMCGenTrees(Bool_t fillMCgen) {fFillMCGenTrees=fillMCgen;}
 
     void SetFillDQSingleMuonsTree(Int_t opt){fWriteVariableTreeSingleMuons=opt;}
-    
+    void SetFillDQDiMuonsTree(Int_t opt){fWriteVariableTreeDiMuons=opt;}
     void SetMinJetPtCorr(double pt) { fMinJetPtCorr = pt; }
     void SetFillJetEtaPhi(bool b) { fFillJetEtaPhi = b; }
     void SetFillPtCorr(bool b) { fFillPtCorr = b; }
@@ -133,6 +134,8 @@ public:
     void ProcessMCGen(TClonesArray *arrayMC);
 
     void ProcessMuons(AliAODEvent *aod, AliMuonTrackCuts *cuts);
+
+    void ProcessDiMuons(AliAODEvent *aod, AliMuonTrackCuts *cuts, Float_t bfield);
   
     Bool_t CheckDaugAcc(TClonesArray* arrayMC,Int_t nProng, Int_t *labDau);
     AliAODVertex* ReconstructBplusVertex(const AliVVertex *primary, TObjArray *tracks, Double_t bField, Double_t dispersion);
@@ -229,6 +232,10 @@ private:
                                                                   //0 don't fill
                                                                   //1 fill standard tree
 
+    Int_t                 fWriteVariableTreeDiMuons;              // flag to decide whether to write the candidate variables on a tree variables
+                                                                  //0 don't fill
+                                                                  //1 fill standard tree
+
     TTree                   *fVariablesTreeD0;                     //!<! tree of the candidate variables
     TTree                   *fVariablesTreeDs;                     //!<! tree of the candidate variables
     TTree                   *fVariablesTreeDplus;                  //!<! tree of the candidate variables
@@ -237,6 +244,7 @@ private:
     TTree                   *fVariablesTreeDstar;                  //!<! tree of the candidate variables
     TTree                   *fVariablesTreeLc2V0bachelor;          //!<! tree of the candidate variables
     TTree                   *fVariablesTreeSingleMuons;            //!<! tree of the candidate variables
+    TTree                   *fVariablesTreeDiMuons;                //!<! tree of the candidate variables
     TTree                   *fGenTreeD0;                           //!<! tree of the gen D0 variables
     TTree                   *fGenTreeDs;                           //!<! tree of the gen Ds variables
     TTree                   *fGenTreeDplus;                        //!<! tree of the gen D+ variables
@@ -245,6 +253,7 @@ private:
     TTree                   *fGenTreeDstar;                        //!<! tree of the gen Dstar variables
     TTree                   *fGenTreeLc2V0bachelor;                //!<! tree of the gen Lc2V0bachelor variables
     TTree                   *fGenTreeSingleMuons;                  //!<! tree of the gen Single Muons variables
+    TTree                   *fGenTreeDiMuons;                      //!<! tree of the gen Di Muons variables
     TTree                   *fTreeEvChar;                          //!<! tree of event variables
     bool                    fWriteOnlySignal;
     AliHFTreeHandlerD0toKpi        *fTreeHandlerD0;                //!<! handler object for the tree with topological variables
@@ -254,7 +263,8 @@ private:
     AliHFTreeHandlerBplustoD0pi    *fTreeHandlerBplus;             //!<! handler object for the tree with topological variables
     AliHFTreeHandlerDstartoKpipi   *fTreeHandlerDstar;             //!<! handler object for the tree with topological variables
     AliHFTreeHandlerLc2V0bachelor  *fTreeHandlerLc2V0bachelor;     //!<! handler object for the tree with topological variables
-    AliDQTreeHandlerSingleMuons    *fTreeHandlerSingleMuons;       //!<! handler object for the tree with muon variables
+    AliDQTreeHandlerSingleMuons    *fTreeHandlerSingleMuons;       //!<! handler object for the tree with single muon variables
+    AliDQTreeHandlerDiMuons        *fTreeHandlerDiMuons;           //!<! handler object for the tree with topological dimuon variables
     AliHFTreeHandlerD0toKpi        *fTreeHandlerGenD0;             //!<! handler object for the tree with topological variables
     AliHFTreeHandlerDstoKKpi       *fTreeHandlerGenDs;             //!<! handler object for the tree with topological variables
     AliHFTreeHandlerDplustoKpipi   *fTreeHandlerGenDplus;          //!<! handler object for the tree with topological variables
@@ -263,6 +273,7 @@ private:
     AliHFTreeHandlerDstartoKpipi   *fTreeHandlerGenDstar;          //!<! handler object for the tree with topological variables
     AliHFTreeHandlerLc2V0bachelor  *fTreeHandlerGenLc2V0bachelor;  //!<! handler object for the tree with topological variables
     AliDQTreeHandlerSingleMuons    *fTreeHandlerGenSingleMuons;    //!<! handler object for the tree with muon variables
+    AliDQTreeHandlerDiMuons        *fTreeHandlerGenDiMuons;        //!<! handler object for the tree with muon variables
     AliPIDResponse          *fPIDresp;                             /// PID response
     int                     fPIDoptD0;                             /// PID option for D0 tree
     int                     fPIDoptDs;                             /// PID option for Ds tree
@@ -272,13 +283,14 @@ private:
     int                     fPIDoptDstar;                          /// PID option for D* tree
     int                     fPIDoptLc2V0bachelor;                  /// PID option for Lc2V0bachelor tree
     int                     fPIDoptSingleMuons;                    /// PID option for single muon tree
+    int                     fPIDoptDiMuons;                        /// PID option for dimuon tree
     Float_t                 fCentrality;                           /// event centrality
     Float_t                 fzVtxReco;                             /// reconstructed Zvtx
     Float_t                 fzVtxGen;                              /// generated Zvtx
     Int_t                   fNcontributors;                        /// number of contributors
     Int_t                   fNtracks;                              /// number of tracks
     Int_t                   fNmuontracks;                          /// number of muon tracks
-    //add number of MFT tracklets
+    Int_t                   fNMFTtracklets;                         /// number of MFT tracklets
     Int_t                   fIsEvRej;                              /// flag with information about rejection of the event
     Int_t                   fRunNumber;                            /// run number
     UInt_t                  fEventID;                              /// event ID (unique when combined with run number)

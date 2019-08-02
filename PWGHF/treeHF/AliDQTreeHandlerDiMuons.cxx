@@ -5,10 +5,10 @@
 
 //*************************************************************************
 // \class AliDQTreeHandlerDiMuons
-// \brief helper class to handle a tree for D0 cut optimisation and MVA analyses
+// \brief helper class to handle a tree for Dimuons (quarkonia, low-masses, tobe promoted for 3 muons)
 // \authors:
 // M. Winn, mwinn@cern.ch
-// heavily based on AliHFTreeHandlerD0toKpi
+// heavily based on AliHFTreeHandlerDKpi
 /////////////////////////////////////////////////////////////
 
 #include <cmath>
@@ -145,9 +145,9 @@ bool AliDQTreeHandlerDiMuons::SetVariables(int runnumber, unsigned int eventID, 
   fIsMCGenTree=false;
 
   if(!cand) return false;
-  // if(fFillOnlySignal) { //if fill only signal and not signal candidate, do not store
-    //    if(!(fCandType&kSignal || fCandType&kRefl)) return true;
-  //  }
+   if(fFillOnlySignal) { //if fill only signal and not signal candidate, do not store
+     if(!(fCandType&kSignal)) return true;
+   }
   fNCandidates++;
   fRunNumber=runnumber;
   fEvID=eventID;

@@ -51,6 +51,7 @@
 #include "AliAnalysisManager.h"
 #include "AliESDtrack.h"
 #include "AliVertexerTracks.h"
+#include "AliAODDimuon.h"
 #include "AliAODHandler.h"
 #include "AliAODEvent.h"
 #include "AliAODVertex.h"
@@ -134,6 +135,7 @@ fVariablesTreeBplus(0x0),
 fVariablesTreeDstar(0x0),
 fVariablesTreeLc2V0bachelor(0x0),
 fVariablesTreeSingleMuons(0x0),
+fVariablesTreeDiMuons(0x0),
 fGenTreeD0(0x0),
 fGenTreeDs(0x0),
 fGenTreeDplus(0x0),
@@ -142,6 +144,7 @@ fGenTreeBplus(0x0),
 fGenTreeDstar(0x0),
 fGenTreeLc2V0bachelor(0x0),
 fGenTreeSingleMuons(0x0),
+fGenTreeDiMouns(0x0),
 fTreeEvChar(0x0),
 fWriteOnlySignal(kFALSE),
 fTreeHandlerD0(0x0),
@@ -160,6 +163,7 @@ fTreeHandlerGenBplus(0x0),
 fTreeHandlerGenDstar(0x0),
 fTreeHandlerGenLc2V0bachelor(0x0),
 fTreeHandlerGenSingleMuons(0x0),
+fTreeHandlerGenDiMuons(0x0),
 fPIDresp(0x0),
 fPIDoptD0(AliHFTreeHandler::kRawAndNsigmaPID),
 fPIDoptDs(AliHFTreeHandler::kRawAndNsigmaPID),
@@ -175,6 +179,7 @@ fzVtxGen(0.),
 fNcontributors(0),
 fNtracks(0),
 fNmuontracks(0),
+fNMFTtracklets(0),
 fIsEvRej(0),
 fRunNumber(0),
 fEventID(0),
@@ -255,7 +260,7 @@ fCounter(0x0),
 fUseSelectionBit(kTRUE),
 fSys(0),
 fAODProtection(1),
-fWriteVariableTreeD0(0),
+fWriteVariableTreeD0(0),//why not boolean?
 fWriteVariableTreeDs(0),
 fWriteVariableTreeDplus(0),
 fWriteVariableTreeLctopKpi(0),
@@ -263,6 +268,7 @@ fWriteVariableTreeBplus(0),
 fWriteVariableTreeDstar(0),
 fWriteVariableTreeLc2V0bachelor(0),
 fWriteVariableTreeSingleMuons(0),
+fWriteVariableTreeDiMuons(0),
 fVariablesTreeD0(0x0),
 fVariablesTreeDs(0x0),
 fVariablesTreeDplus(0x0),
@@ -279,6 +285,7 @@ fGenTreeBplus(0x0),
 fGenTreeDstar(0x0),
 fGenTreeLc2V0bachelor(0x0),
 fGenTreeSingleMuons(0x0),
+fGenTreeDiMuons(0x0),
 fTreeEvChar(0x0),
 fWriteOnlySignal(kFALSE),
 fTreeHandlerD0(0x0),
@@ -297,6 +304,7 @@ fTreeHandlerGenBplus(0x0),
 fTreeHandlerGenDstar(0x0),
 fTreeHandlerGenLc2V0bachelor(0x0),
 fTreeHandlerGenSingleMuons(0x0),
+fTreeHandlerGenDiMuons(0x0),
 fPIDresp(0x0),
 fPIDoptD0(AliHFTreeHandler::kRawAndNsigmaPID),
 fPIDoptDs(AliHFTreeHandler::kRawAndNsigmaPID),
@@ -306,12 +314,14 @@ fPIDoptBplus(AliHFTreeHandler::kRawAndNsigmaPID),
 fPIDoptDstar(AliHFTreeHandler::kRawAndNsigmaPID),
 fPIDoptLc2V0bachelor(AliHFTreeHandler::kRawAndNsigmaPID),
 fPIDoptSingleMuons(AliDQTreeHandlerSingleMuons::kMID),
+fPIDoptDiMuons(AliDQTreeHandlerDiMuons::kMID),
 fCentrality(-999.),
 fzVtxReco(0.),
 fzVtxGen(0.),
 fNcontributors(0),
 fNtracks(0),
 fNmuontracks(0),
+fMFTtracklets(0),
 fIsEvRej(0),
 fRunNumber(0),
 fEventID(0),
@@ -422,7 +432,7 @@ fSystemForNsigmaTPCDataCorr(AliAODPidHF::kNone)
     fCutsBplustoD0pi      =(AliRDHFCutsBPlustoD0Pi*)fListCuts->FindObject("BplustoD0piAnalysisCuts");
     fCutsDstartoKpipi     =(AliRDHFCutsDStartoKpipi*)fListCuts->FindObject("DstartoKpipiAnalysisCuts");
     fCutsLc2V0bachelor    =(AliRDHFCutsLctoV0*)fListCuts->FindObject("Lc2V0bachelorAnalysisCuts");
-
+    
     if(fWriteVariableTreeD0) fEvSelectionCuts = (AliRDHFCuts*)fFiltCutsD0toKpi->Clone();
     else if(fWriteVariableTreeDplus) fEvSelectionCuts = (AliRDHFCuts*)fFiltCutsDplustoKpipi->Clone();
     else if(fWriteVariableTreeDs) fEvSelectionCuts = (AliRDHFCuts*)fFiltCutsDstoKKpi->Clone();
@@ -484,29 +494,32 @@ fSystemForNsigmaTPCDataCorr(AliAODPidHF::kNone)
     DefineOutput(20,TTree::Class());
     // Output slot #21 stores the tree of the single muon gen variables
     DefineOutput(21,TTree::Class());
-    // Output slot #22 stores the tree of the track variables after track selection
+    // Output slot #22 stores the tree of the dimuon candidate variables after track selection
     DefineOutput(22,TTree::Class());
-    // Output slot #23 stores the tree of the MC particle variables
+    //Output slot #23 stores the tree of the dimuon candidate variables after track selection
     DefineOutput(23,TTree::Class());
-    // Output slot #24 stores tracklets
+    // Output slot #22 stores the tree of the track variables after track selection
     DefineOutput(24,TTree::Class());
+    // Output slot #23 stores the tree of the MC particle variables
+    DefineOutput(25,TTree::Class());
+    // Output slot #24 stores tracklets
+    DefineOutput(26,TTree::Class());
   
     // Set up separate output slot for each jet tree
     // (for simplicity, keep the jet trees in the last slots)
     for (int i=0; i<fillNJetTrees; i++) {
       // Output slot #20 stores the tree of the jet variables
-      DefineOutput(25+i,TTree::Class());
+      DefineOutput(27+i,TTree::Class());
     }
   
     // Set up separate output slot for each jet constituent tree (if enabled)
     if (fillJetConstituentTrees) {
       for (int i=0; i<fillNJetTrees; i++) {
         // Output slot #25 stores the tree of the jet variables
-        DefineOutput(25+fillNJetTrees+i,TTree::Class());
+        DefineOutput(27+fillNJetTrees+i,TTree::Class());
       }
     }
 
-    //TODO add dimuons
   
 }
 
@@ -629,6 +642,10 @@ AliAnalysisTaskSEHFTreeCreator::~AliAnalysisTaskSEHFTreeCreator()
       delete fTreeHandlerSingleMuons;
       fTreeHandlerSingleMuons = 0x0;
     }
+    if(fTreeHandlerDiMuons){
+      delete fTreeHandlerDiMuons;
+      fTreeHandlerDiMuons = 0x0;
+    }
     if(fTreeHandlerParticle) {
       delete fTreeHandlerParticle;
       fTreeHandlerParticle = 0x0;
@@ -674,6 +691,10 @@ AliAnalysisTaskSEHFTreeCreator::~AliAnalysisTaskSEHFTreeCreator()
       delete fTreeHandlerGenSingleMuons;
       fTreeHandlerGenSingleMuons = 0x0;
     }
+    if(fTreeHandlerGenDiMuons) {
+      delete fTreeHandlerGenDiMuons;
+      fTreeHandlerGenDiMuons = 0x0;
+    }
     if(fTreeHandlerGenParticle) {
       delete fTreeHandlerGenParticle;
       fTreeHandlerGenParticle = 0x0;
@@ -706,7 +727,7 @@ void AliAnalysisTaskSEHFTreeCreator::UserCreateOutputObjects()
     if(fDebug > 1) printf("AliAnalysisTaskSEHFTreeCreator::UserCreateOutputObjects() \n");
     
     const char* nameoutput=GetOutputSlot(1)->GetContainer()->GetName();
-    fNentries=new TH1F(nameoutput, "Number of events", 41,-0.5,40.5);
+    fNentries=new TH1F(nameoutput, "Number of events", 43,-0.5,42.5);
     fNentries->GetXaxis()->SetBinLabel(1,"n. evt. read");
     fNentries->GetXaxis()->SetBinLabel(2,"n. evt. matched dAOD");
     fNentries->GetXaxis()->SetBinLabel(3,"n. evt. mismatched dAOD");
@@ -745,9 +766,11 @@ void AliAnalysisTaskSEHFTreeCreator::UserCreateOutputObjects()
     fNentries->GetXaxis()->SetBinLabel(36,"n. of not on-the-fly rec Lc2V0bachelor");
     fNentries->GetXaxis()->SetBinLabel(37,"n. of single muons cand.");
     fNentries->GetXaxis()->SetBinLabel(38,"n. of single muons sel.");
-    fNentries->GetXaxis()->SetBinLabel(39,"n. evt. CMSH7 (single muon trigger)");
-    fNentries->GetXaxis()->SetBinLabel(40,"n. evt. CMUL7 (unlike dimuon trigger)");
-    fNentries->GetXaxis()->SetBinLabel(41,"n. evt. CMLL7 (like dimuon trigger)");
+    fNentries->GetXaxis()->SetBinLabel(39,"n. of di muons cand.");
+    fNentries->GetXaxis()->SetBinLabel(40,"n. of di muons sel.");
+    fNentries->GetXaxis()->SetBinLabel(41,"n. evt. CMSH7 (single muon trigger)");
+    fNentries->GetXaxis()->SetBinLabel(42,"n. evt. CMUL7 (unlike dimuon trigger)");
+    fNentries->GetXaxis()->SetBinLabel(43,"n. evt. CMLL7 (like dimuon trigger)");
     
     nameoutput=GetOutputSlot(2)->GetContainer()->GetName();
     fHistoNormCounter=new TH2F(nameoutput, "Number of events for norm;;centrality", 5,-0.5,4.5,102,-1.,101.);
@@ -775,6 +798,7 @@ void AliAnalysisTaskSEHFTreeCreator::UserCreateOutputObjects()
     if(fWriteVariableTreeDstar) nEnabledTrees++;
     if(fWriteVariableTreeLc2V0bachelor) nEnabledTrees++;
     if(fWriteVariableTreeSingleMuons) nEnabledTrees++;
+    if(fWriteVariableTreeDiMuons) nEnabledTrees++;
     if (fFillParticleTree) nEnabledTrees++;
     if (fFillTrackletTree) nEnabledTrees++;
     if(fReadMC && fFillMCGenTrees) {
@@ -792,18 +816,19 @@ void AliAnalysisTaskSEHFTreeCreator::UserCreateOutputObjects()
     OpenFile(5);
     fTreeEvChar = new TTree("tree_event_char","tree_event_char");
     //set variables
-    TString varnames[11] = {"centrality", "z_vtx_reco", "n_vtx_contributors", "n_tracks", "n_muontracks" , "is_ev_rej", "run_number", "ev_id", "n_tracklets", "V0Amult", "z_vtx_gen"};
+    TString varnames[11] = {"centrality", "z_vtx_reco", "n_vtx_contributors", "n_tracks", "n_muontracks", "n_MFTtracklets" , "is_ev_rej", "run_number", "ev_id", "n_tracklets", "V0Amult", "z_vtx_gen"};
     fTreeEvChar->Branch(varnames[0].Data(),&fCentrality,Form("%s/F",varnames[0].Data()));
     fTreeEvChar->Branch(varnames[1].Data(),&fzVtxReco,Form("%s/F",varnames[1].Data()));
     fTreeEvChar->Branch(varnames[2].Data(),&fNcontributors,Form("%s/I",varnames[2].Data()));
     fTreeEvChar->Branch(varnames[3].Data(),&fNtracks,Form("%s/I",varnames[3].Data()));
     fTreeEvChar->Branch(varnames[4].Data(),&fNmuontracks,Form("%s/I",varnames[4].Data()));
-    fTreeEvChar->Branch(varnames[5].Data(),&fIsEvRej,Form("%s/I",varnames[5].Data()));
-    fTreeEvChar->Branch(varnames[6].Data(),&fRunNumber,Form("%s/I",varnames[6].Data()));
-    fTreeEvChar->Branch(varnames[7].Data(),&fEventID,Form("%s/i",varnames[7].Data()));
-    fTreeEvChar->Branch(varnames[8].Data(),&fnTracklets,Form("%s/I",varnames[8].Data()));
-    fTreeEvChar->Branch(varnames[9].Data(),&fnV0A,Form("%s/I",varnames[9].Data()));
-    if(fReadMC) fTreeEvChar->Branch(varnames[10].Data(),&fzVtxGen,Form("%s/F",varnames[10].Data()));
+    fTreeEvChar->Branch(varnames[5].Data(),&fNMFTtracklets,Form("%s/I",varnames[5].Data()));
+    fTreeEvChar->Branch(varnames[6].Data(),&fIsEvRej,Form("%s/I",varnames[6].Data()));
+    fTreeEvChar->Branch(varnames[7].Data(),&fRunNumber,Form("%s/I",varnames[7].Data()));
+    fTreeEvChar->Branch(varnames[8].Data(),&fEventID,Form("%s/i",varnames[8].Data()));
+    fTreeEvChar->Branch(varnames[9].Data(),&fnTracklets,Form("%s/I",varnames[9].Data()));
+    fTreeEvChar->Branch(varnames[10].Data(),&fnV0A,Form("%s/I",varnames[10].Data()));
+    if(fReadMC) fTreeEvChar->Branch(varnames[11].Data(),&fzVtxGen,Form("%s/F",varnames[11].Data()));
     fTreeEvChar->SetMaxVirtualSize(1.e+8/nEnabledTrees);
 
     if(fWriteVariableTreeD0){
@@ -955,17 +980,36 @@ if(fWriteVariableTreeSingleMuons){
 	fTreeEvChar->AddFriend(fVariablesTreeSingleMuons);
 	if(fFillMCGenTrees && fReadMC) {
 	    OpenFile(21);
-            TString nameoutput = "tree_single_gen";
+            TString nameoutput = "tree_singlemuons_gen";
             fTreeHandlerGenSingleMuons = new AliDQTreeHandlerSingleMuons();//check if PID option as constructor availabe
             fGenTreeSingleMuons = (TTree*)fTreeHandlerGenSingleMuons->BuildTreeMCGen(nameoutput,nameoutput);
             fGenTreeSingleMuons->SetMaxVirtualSize(1.e+8/nEnabledTrees);
             fTreeEvChar->AddFriend(fGenTreeSingleMuons);
 	}
  }
+ if(fWriteVariableTreeDiMuons){
+        OpenFile(22);
+        TString nameoutput = "tree_dimuons";
+        fTreeHandlerDiMuons = new AliDQTreeHandlerDiMuons();//check if PID option passed                                                                                                                                                           
+        fTreeHandlerDiMuons->SetOptSingleTrackVars(fTreeSingleTrackVarsOpt);
+        if(fReadMC && fWriteOnlySignal) fTreeHandlerDiMuons->SetFillOnlySignal(fWriteOnlySignal);
+        fVariablesTreeDiMuons = (TTree*)fTreeHandlerDiMuons->BuildTree(nameoutput,nameoutput);
+        fVariablesTreeDiMuons->SetMaxVirtualSize(1.e+8/nEnabledTrees);
+        fTreeEvChar->AddFriend(fVariablesTreeDiMuons);
+        if(fFillMCGenTrees && fReadMC) {
+            OpenFile(23);
+            TString nameoutput = "tree_dimuons_gen";
+            fTreeHandlerGenDiMuons = new AliDQTreeHandlerDiMuons();//check if PID option as constructor availabe                                                                                                                                   
+            fGenTreeDiMuons = (TTree*)fTreeHandlerGenDiMuons->BuildTreeMCGen(nameoutput,nameoutput);
+            fGenTreeDiMuons->SetMaxVirtualSize(1.e+8/nEnabledTrees);
+            fTreeEvChar->AddFriend(fGenTreeDiMuons);
+        }
+ }
+
 
     
     if(fFillParticleTree){
-      OpenFile(22);
+      OpenFile(24);
       TString nameoutput = "tree_Particle";
       fTreeHandlerParticle = new AliParticleTreeHandler();
       fTreeHandlerParticle->SetParticleContainer(GetParticleContainer(0));
@@ -973,7 +1017,7 @@ if(fWriteVariableTreeSingleMuons){
       fVariablesTreeParticle->SetMaxVirtualSize(1.e+8/nEnabledTrees);
       fTreeEvChar->AddFriend(fVariablesTreeParticle);
       if(fFillMCGenTrees && fReadMC) {
-        OpenFile(23);
+        OpenFile(25);
         TString nameoutput = "tree_Particle_gen";
         fTreeHandlerGenParticle = new AliParticleTreeHandler();
         fTreeHandlerGenParticle->SetParticleContainer(GetParticleContainer(1));
@@ -983,7 +1027,7 @@ if(fWriteVariableTreeSingleMuons){
       }
     }
     if(fFillTrackletTree){
-      OpenFile(24);
+      OpenFile(26);
       TString nameoutput = "tree_Tracklet";
       fTreeHandlerTracklet = new AliTrackletTreeHandler();
       fVariablesTreeTracklet = (TTree*)fTreeHandlerTracklet->BuildTree(nameoutput,nameoutput);
@@ -992,7 +1036,7 @@ if(fWriteVariableTreeSingleMuons){
     }
     if(fWriteNJetTrees > 0){
       for (int i=0; i<fJetCollArray.GetEntriesFast(); i++) {
-        OpenFile(25 + i);
+        OpenFile(27 + i);
         
         // Create jet tree handlers and configure them
         fTreeHandlerJet.push_back(new AliJetTreeHandler());
@@ -1019,7 +1063,7 @@ if(fWriteVariableTreeSingleMuons){
         
         // Build jet constituent trees (if enabled)
         if (fFillJetConstituentTrees) {
-          OpenFile(22 + fWriteNJetTrees + i);
+          OpenFile(27 + fWriteNJetTrees + i);
           TString nameoutput = Form("Constituents_%s", GetJetContainer(i)->GetName());
           fVariablesTreeJetConstituent.push_back((TTree*)fTreeHandlerJet.at(i)->BuildJetConstituentTree(nameoutput,nameoutput));
           fVariablesTreeJetConstituent.at(i)->SetMaxVirtualSize(1.e+8/nEnabledTrees);
@@ -1065,23 +1109,27 @@ if(fWriteVariableTreeSingleMuons){
       PostData(20,fVariablesTreeSingleMuons);
       if(fFillMCGenTrees && fReadMC) PostData(21,fGenTreeSingleMuons);
     }
+    if(fWriteVariableTreeDiMuons){
+      PostData(22,fVariablesTreeDiMuons);
+      if(fFillMCGenTrees && fReadMC) PostData(23,fGenTreeDiMuons);
+    }
     if(fFillParticleTree){
-      PostData(22,fVariablesTreeParticle);
-      if(fFillMCGenTrees && fReadMC) PostData(23,fVariablesTreeGenParticle);
+      PostData(24,fVariablesTreeParticle);
+      if(fFillMCGenTrees && fReadMC) PostData(25,fVariablesTreeGenParticle);
     }
     if(fFillTrackletTree){
-      PostData(24,fVariablesTreeTracklet);
+      PostData(26,fVariablesTreeTracklet);
     }
     if(fWriteNJetTrees > 0){
       // Post each jet tree to a separate output slot (for simplicity, keep the jet tree in the last slots)
       const int nJetCollections = fJetCollArray.GetEntriesFast();
       for (int i=0; i<nJetCollections; i++) {
-        PostData(25+i,fVariablesTreeJet.at(i));
+        PostData(27+i,fVariablesTreeJet.at(i));
       }
       // Post jet constituent trees (if enabled)
       if (fFillJetConstituentTrees) {
         for (int i=0; i<nJetCollections; i++) {
-          PostData(25+nJetCollections+i,fVariablesTreeJetConstituent.at(i));
+          PostData(27+nJetCollections+i,fVariablesTreeJetConstituent.at(i));
         }
       }
     }
@@ -1216,6 +1264,7 @@ void AliAnalysisTaskSEHFTreeCreator::UserExec(Option_t */*option*/)
     Bool_t isSameEvSelDstar=kTRUE;
     Bool_t isSameEvSelLc2V0bachelor=kTRUE;
     Bool_t isSameEvSelSingleMuons=kTRUE;
+    Bool_t isSameEvSelDiMuons=kTRUE;
     if(fWriteVariableTreeD0)
       isSameEvSelD0=!((fFiltCutsD0toKpi->IsEventSelected(aod) && !fCutsD0toKpi->IsEventSelected(aod))||(!fFiltCutsD0toKpi->IsEventSelected(aod) && fCutsD0toKpi->IsEventSelected(aod)));
     if(fWriteVariableTreeDs)
@@ -1321,8 +1370,9 @@ void AliAnalysisTaskSEHFTreeCreator::UserExec(Option_t */*option*/)
     fNtracks = aod->GetNumberOfTracks();
     fIsEvRej = fEvSelectionCuts->GetEventRejectionBitMap();
     fRunNumber=aod->GetRunNumber();
-    // AOD muon information (MFT to be added)
+    // AOD muon information
     fNmuontracks = aod->GetNumberOfMuonTracks();
+    fNMFTtracklets = 0.0; //TODO AliAODEvent->GetNumberOfMFTTracklets()
     //n tracklets
     AliAODTracklets* tracklets=aod->GetTracklets();
     Int_t nTr=tracklets->GetNumberOfTracklets();
@@ -1352,8 +1402,8 @@ void AliAnalysisTaskSEHFTreeCreator::UserExec(Option_t */*option*/)
     if(fWriteVariableTreeDstar) ProcessDstar(arrayDstar,aod,mcArray,aod->GetMagneticField());
     if(fWriteVariableTreeLc2V0bachelor) ProcessCasc(arrayCasc,aod,mcArray,aod->GetMagneticField());
     if(fFillMCGenTrees && fReadMC) ProcessMCGen(mcArray);
-    //Add here ProcessMuons
     if(fWriteVariableTreeSingleMuons) ProcessMuons(aod, fCutsMuons); //TODO: fCutsMuons needs to be set somewhere
+    if(fWriteVariableTreeDiMuons) ProcessDiMuons(aod, fCutsMuons,aod->GetMagneticField());
     
     // Fill the jet tree
     if (fWriteNJetTrees > 0 || fFillParticleTree) {
@@ -1397,23 +1447,31 @@ void AliAnalysisTaskSEHFTreeCreator::UserExec(Option_t */*option*/)
         PostData(18,fVariablesTreeLc2V0bachelor);
         if(fFillMCGenTrees && fReadMC) PostData(19,fGenTreeLc2V0bachelor);
     }
+    if(fWriteVariableTreeSingleMuons){
+      PostData(20,fVariablesTreeSingleMuons);
+      if(fFillMCGenTrees && fReadMC) PostData(21,fGenTreeSingleMuons);
+    }
+    if(fWriteVariableTreeDiMuons){
+      PostData(22,fVariablesTreeDiMuons);
+      if(fFillMCGenTrees && fReadMC) PostData(23,fGenTreeDiMuons);
+    }
     if(fFillParticleTree){
-      PostData(20,fVariablesTreeParticle);
-      if(fFillMCGenTrees && fReadMC) PostData(21,fVariablesTreeGenParticle);
+      PostData(24,fVariablesTreeParticle);
+      if(fFillMCGenTrees && fReadMC) PostData(25,fVariablesTreeGenParticle);
     } 
     if(fFillTrackletTree){
-      PostData(22,fVariablesTreeTracklet);
+      PostData(26,fVariablesTreeTracklet);
     }
     if(fWriteNJetTrees > 0){
       // Post each jet tree to a separate output slot (for simplicity, keep the jet tree in the last slots)
       const int nJetCollections = fJetCollArray.GetEntriesFast();
       for (int i=0; i<nJetCollections; i++) {
-        PostData(23+i,fVariablesTreeJet.at(i));
+        PostData(27+i,fVariablesTreeJet.at(i));
       }
       // Post jet constituent trees (if enabled)
       if (fFillJetConstituentTrees) {
         for (int i=0; i<nJetCollections; i++) {
-          PostData(23+nJetCollections+i,fVariablesTreeJetConstituent.at(i));
+          PostData(27+nJetCollections+i,fVariablesTreeJetConstituent.at(i));
         }
       }
     }
@@ -1806,7 +1864,9 @@ void AliAnalysisTaskSEHFTreeCreator::Process2Prong(TClonesArray *array2prong, Al
                             //use the new vertex to create the BPlus candidate
                             Double_t xdummy = 0., ydummy = 0.;
                             Double_t d0z0[2], covd0z0[3], d0[2], d0err[2];
-                            
+			    //MW: question: is d0 and d0z0 properly filled?
+			    //TODO: verify meaning in D2H jargon
+			    
                             firstTrack.PropagateToDCA(vertexMother, bfield, 100., d0z0, covd0z0);
                             secondTrack.PropagateToDCA(vertexMother, bfield, 100., d0z0, covd0z0);
                             
@@ -2726,6 +2786,110 @@ void AliAnalysisTaskSEHFTreeCreator::ProcessMuons(AliAODEvent *aod, AliMuonTrack
   }
   
 }
+//_________________________________________________________________                                 
+void AliAnalysisTaskSEHFTreeCreator::ProcessDiMuons(AliAODEvent *aod, AliMuonTrackCuts *cuts, float bfield){
+
+  Int_t nMuons = aod->GetNumberOfMuonTracks();
+  if(nMuons<=1)
+    return;
+
+  Float_t ptgen= -9999.;
+  //TODO: case of dimuons already in aod!
+  //TODO: propagate to common vertex
+  Int_t nSelectedMuons=0;
+  TRefArray muons; //TODO: check ownership and process iD
+  Int_t nMuons2 = aod->GetMuonTracks(&muons);
+  if(nMuons2!=nMuons) AliFatal("Muon numbers from AODS not consistent");
+
+  for (Int_t imuons1 = 0; imuons1 < nMuons; ++imuons1){
+
+    AliAODTrack* muon1 = (AliAODTrack*) muons.At(imuons1);
+     //use AliMuonCuts                                                                                                                                                
+    if(!cuts->IsSelected(muon1)) continue;
+    for(Int_t imuons2 = imuons1+1; imuons2 < nMuons; ++imuons2 )
+      {
+	
+      AliAODTrack* muon2 = (AliAODTrack*) muons.At(imuons2); //
+      if(!cuts->IsSelected(muon2)) continue;
+				      
+    //retrieve only selected muons
+    //TODO: how to write the loop in the easiest way
+      if(fdimuonvertexing) {
+	AliAODVertex  *pv =(AliAODVertex*)aod->GetPrimaryVertex();//needed as pointer?
+	//ITS PV is fine, no overlap with MFT
+	TObjArray muonsarr;
+	AliExternalTrackParam firstMuon;
+	firstMuon.CopyFromVTrack(muon1);
+	AliExternalTrackParam secondMuon;
+	secondMuon.CopyFromVTrack(muon2);
+	TObjArray muonDaughters;
+	muonDaughters.Add(&firstMuon);
+	muonDaughters.Add(&secondMuon);
+	Double_t dispersion =0;
+	AliAODVertex *bvertex = ReconstructBplusVertex(pv, &muonDaughters, bfield, dispersion);//assume that bfield the same for MFT...
+	//not completely right, but angle of constellation minimising deviations
+	if(bvertex){
+
+	  //use new vertex to create btomumu candidate
+	  Double_t xdummy =0., ydummy = 0.;
+	  Double_t d0z0[2], covd0z0[3], d0[2], d0err[2];
+
+	  firstMuon.PropagateToDCA(bvertex, bfield, 100., d0z0, covd0z0);
+	  secondMuon.PropagateToDCA(bvertex, bfield, 100., d0z0, covd0z0);
+	  //TODO not understood what is meaning of do vs. meaning of d0z0
+	  //we reconstruct the mother decay prong
+	  Double_t px[2], py[2], pz[2];
+	  px[0] = firstMuon.Px();
+	  py[0] = firstMuon.Py();
+	  pz[0] = firstMuon.Pz();
+	  px[1] = secondMuon.Px();
+	  py[1] = secondMuon.Py();
+	  pz[1] = secondMuon.Pz();
+
+	  UShort_t id[2];
+	  id[0] = firstMuon.GetID();
+	  id[1] = secondMuon.GetID();
+
+	  firstMuon.PropagateToDCA(pv, bfield, 100.,/*TODO: meaning? */  d0z0, covd0z0);
+	  d0[0] = d0z0[0];
+	  d0err[0] = TMath::Sqrt(covd0z0[0]);
+	  secondMuon.PropagateToDCA(pv, bfield, 100., d0z0, covd0z0);//does this make sense? where is d0z0 and covd0z0 used before it is overwritten here?
+	  d0[1] = d0z0[0];
+	  d0err[1] = TMath::Sqrt(covd0z0[0]);
+
+	  Double_t dca = secondMuon.GetDCA(&firstMuon,bfield, xdummy, ydummy); //DCA only in transverse?
+	  Short_t chargeMother = muon1->Charge() + muon2->Charge();
+	  //	  AliAODDimuon dimuon(bvertex, px, py, pz, d0, d0err, dca);
+	  //TODO change AliAODDimuon class , check AliAODRecoDecayHF2Prong
+        AliAODDimuon dimuon(muon1,muon2);
+	//dimuon.SetCharge(chargeMother);
+	//dimuon.SetProngIDs(2, id); //needed?
+
+	//TODO: apply cuts
+	//MC matching
+	//SetVariables, setCanddiateType (needs MC matching)
+	//FillTree
+	fTreeHandlerDiMuons->SetVariables(fRunNumber, fEventID, ptgen, &dimuon, 0.0 /*tobedone bfield*/);
+	fTreeHandlerDiMuons->FillTree();
+	
+	}
+	delete bvertex; bvertex = nullptr;
+      
+      }else {
+	AliAODDimuon dimuon(muon1,muon2);
+	fTreeHandlerDiMuons->SetVariables(fRunNumber, fEventID, ptgen, &dimuon, 0.0 /*tobedone bfield*/);
+	fTreeHandlerDiMuons->FillTree();
+
+      }
+
+      //TODO trigger logic
+      }
+  }
+  //fNentries->Fill();//something
+
+  
+
+}
 //_________________________________________________________________
 void AliAnalysisTaskSEHFTreeCreator::ProcessMCGen(TClonesArray *arrayMC){
   /// Fill MC gen trees
@@ -2865,13 +3029,14 @@ void AliAnalysisTaskSEHFTreeCreator::ProcessMCGen(TClonesArray *arrayMC){
 	fTreeHandlerSingleMuons->SetMCGenVariables(fRunNumber,fEventID, mcPart,absPDGmo,absPDGgdmo);
 
       }
+      //TODO logic for dimuos quarkonia, low-mass
   }
 }
 
 //--------------------------------------------------------
 Bool_t AliAnalysisTaskSEHFTreeCreator::CheckDaugAcc(TClonesArray* arrayMC,Int_t nProng, Int_t *labDau){
   /// check if the decay products are in the good eta and pt range
-  
+  //TODO: addition for dimuons
   for (Int_t iProng = 0; iProng<nProng; iProng++){
     AliAODMCParticle* mcPartDaughter=dynamic_cast<AliAODMCParticle*>(arrayMC->At(labDau[iProng]));
     if(!mcPartDaughter) {
@@ -2944,7 +3109,6 @@ AliAODVertex* AliAnalysisTaskSEHFTreeCreator::ReconstructBplusVertex(const AliVV
     
     return vertexAOD;
 }
-
 //________________________________________________________________
 unsigned int AliAnalysisTaskSEHFTreeCreator::GetEvID() {
     
