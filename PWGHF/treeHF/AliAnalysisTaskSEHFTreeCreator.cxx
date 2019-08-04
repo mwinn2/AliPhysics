@@ -144,7 +144,7 @@ fGenTreeBplus(0x0),
 fGenTreeDstar(0x0),
 fGenTreeLc2V0bachelor(0x0),
 fGenTreeSingleMuons(0x0),
-fGenTreeDiMouns(0x0),
+fGenTreeDiMuons(0x0),
 fTreeEvChar(0x0),
 fWriteOnlySignal(kFALSE),
 fTreeHandlerD0(0x0),
@@ -173,6 +173,7 @@ fPIDoptBplus(AliHFTreeHandler::kRawAndNsigmaPID),
 fPIDoptDstar(AliHFTreeHandler::kRawAndNsigmaPID),
 fPIDoptLc2V0bachelor(AliHFTreeHandler::kRawAndNsigmaPID),
 fPIDoptSingleMuons(AliDQTreeHandlerSingleMuons::kMID),
+fPIDoptDiMuons(AliDQTreeHandlerDiMuons::kMID),
 fCentrality(-999.),
 fzVtxReco(0.),
 fzVtxGen(0.),
@@ -321,7 +322,7 @@ fzVtxGen(0.),
 fNcontributors(0),
 fNtracks(0),
 fNmuontracks(0),
-fMFTtracklets(0),
+fNMFTtracklets(0),
 fIsEvRej(0),
 fRunNumber(0),
 fEventID(0),
@@ -816,7 +817,7 @@ void AliAnalysisTaskSEHFTreeCreator::UserCreateOutputObjects()
     OpenFile(5);
     fTreeEvChar = new TTree("tree_event_char","tree_event_char");
     //set variables
-    TString varnames[11] = {"centrality", "z_vtx_reco", "n_vtx_contributors", "n_tracks", "n_muontracks", "n_MFTtracklets" , "is_ev_rej", "run_number", "ev_id", "n_tracklets", "V0Amult", "z_vtx_gen"};
+    TString varnames[12] = {"centrality", "z_vtx_reco", "n_vtx_contributors", "n_tracks", "n_muontracks", "n_MFTtracklets" , "is_ev_rej", "run_number", "ev_id", "n_tracklets", "V0Amult", "z_vtx_gen"};
     fTreeEvChar->Branch(varnames[0].Data(),&fCentrality,Form("%s/F",varnames[0].Data()));
     fTreeEvChar->Branch(varnames[1].Data(),&fzVtxReco,Form("%s/F",varnames[1].Data()));
     fTreeEvChar->Branch(varnames[2].Data(),&fNcontributors,Form("%s/I",varnames[2].Data()));
@@ -972,7 +973,7 @@ void AliAnalysisTaskSEHFTreeCreator::UserCreateOutputObjects()
 if(fWriteVariableTreeSingleMuons){
         OpenFile(20);
         TString nameoutput = "tree_singlemuons";
-        fTreeHandlerSingleMuons = new AliDQTreeHandlerSingleMuons();//check if PID option passed
+        fTreeHandlerSingleMuons = new AliDQTreeHandlerSingleMuons(fPIDoptDiMuons);//check if PID option passed
         fTreeHandlerSingleMuons->SetOptSingleTrackVars(fTreeSingleTrackVarsOpt);//check if this potion SetOptSingle xyy exists currently
         if(fReadMC && fWriteOnlySignal) fTreeHandlerSingleMuons->SetFillOnlySignal(fWriteOnlySignal);
         fVariablesTreeSingleMuons = (TTree*)fTreeHandlerSingleMuons->BuildTree(nameoutput,nameoutput);
@@ -990,7 +991,7 @@ if(fWriteVariableTreeSingleMuons){
  if(fWriteVariableTreeDiMuons){
         OpenFile(22);
         TString nameoutput = "tree_dimuons";
-        fTreeHandlerDiMuons = new AliDQTreeHandlerDiMuons();//check if PID option passed                                                                                                                                                           
+        fTreeHandlerDiMuons = new AliDQTreeHandlerDiMuons(fPIDoptDiMuons);//check if PID option passed
         fTreeHandlerDiMuons->SetOptSingleTrackVars(fTreeSingleTrackVarsOpt);
         if(fReadMC && fWriteOnlySignal) fTreeHandlerDiMuons->SetFillOnlySignal(fWriteOnlySignal);
         fVariablesTreeDiMuons = (TTree*)fTreeHandlerDiMuons->BuildTree(nameoutput,nameoutput);
@@ -1372,7 +1373,7 @@ void AliAnalysisTaskSEHFTreeCreator::UserExec(Option_t */*option*/)
     fRunNumber=aod->GetRunNumber();
     // AOD muon information
     fNmuontracks = aod->GetNumberOfMuonTracks();
-    fNMFTtracklets = 0.0; //TODO AliAODEvent->GetNumberOfMFTTracklets()
+    fNMFTtracklets = 0; //TODO AliAODEvent->GetNumberOfMFTTracklets()
     //n tracklets
     AliAODTracklets* tracklets=aod->GetTracklets();
     Int_t nTr=tracklets->GetNumberOfTracklets();
@@ -2732,9 +2733,7 @@ void AliAnalysisTaskSEHFTreeCreator::ProcessMuons(AliAODEvent *aod, AliMuonTrack
     //fill more variables than pt: phi, eta, p.
   }
   
-  //field  for propagation for dimuons, TODO
   float bfield = aod->GetMuonMagFieldScale();
-  //  AliAODVertex *vtx1 = (AliAODVertex*) aod->GetPrimaryVertex();
   Int_t nSelectedMuons=0;
   TRefArray muons; //TODO: check ownership and process iD
   
@@ -2764,25 +2763,6 @@ void AliAnalysisTaskSEHFTreeCreator::ProcessMuons(AliAODEvent *aod, AliMuonTrack
     if(triggerCMLL7) fNentries->Fill(40);
 
      fTreeHandlerSingleMuons->SetVariables(fRunNumber, fEventID, ptgen, muon, bfield);
-    //TODO: Dimuon
-    //AliAODTrack *track1;
-    //	AliAODTrack *track2;
-    //	Dimuon *dimuon;
-    //	TLorentzVector muon1L, muon2L, dimuonL;
-    
-    //	TLorentzVector muon1LRotNeg, muon2LRotNeg, dimuonLRotNeg;
-    //	TLorentzVector muon1LRotPos, muon2LRotPos, dimuonLRotPos;	
-    // dimuon case
-    //	for(Int_t itrack1 = 0; itrack1<(aod->GetNumberOfTracks()) ; itrack1 ++){
-    //		track1 = (AliAODTrack*)aod->GetTrack(itrack1);		
-    //		if(!track1) {
-    //			Printf("track 1 not available\n");
-    //			continue;
-    //		}		
-    //		if (!track1->IsMuonTrack()) continue;
-		// first muon lorentz vector
-    //		muon1L.SetPxPyPzE(track1->Px(), track1->Py(), track1->Pz(), track1->E());
-    //  }
   }
   
 }
@@ -2793,9 +2773,13 @@ void AliAnalysisTaskSEHFTreeCreator::ProcessDiMuons(AliAODEvent *aod, AliMuonTra
   if(nMuons<=1)
     return;
 
+  //TODO: case of dimuons already in aod branch!   
+
+
   Float_t ptgen= -9999.;
-  //TODO: case of dimuons already in aod!
-  //TODO: propagate to common vertex
+  if(fReadMC) {
+  //TODO: do MC matching
+  }
   Int_t nSelectedMuons=0;
   TRefArray muons; //TODO: check ownership and process iD
   Int_t nMuons2 = aod->GetMuonTracks(&muons);
@@ -2804,32 +2788,29 @@ void AliAnalysisTaskSEHFTreeCreator::ProcessDiMuons(AliAODEvent *aod, AliMuonTra
   for (Int_t imuons1 = 0; imuons1 < nMuons; ++imuons1){
 
     AliAODTrack* muon1 = (AliAODTrack*) muons.At(imuons1);
-     //use AliMuonCuts                                                                                                                                                
+     //use AliMuonCuts
     if(!cuts->IsSelected(muon1)) continue;
     for(Int_t imuons2 = imuons1+1; imuons2 < nMuons; ++imuons2 )
       {
-	
-      AliAODTrack* muon2 = (AliAODTrack*) muons.At(imuons2); //
-      if(!cuts->IsSelected(muon2)) continue;
-				      
-    //retrieve only selected muons
-    //TODO: how to write the loop in the easiest way
-      if(fdimuonvertexing) {
-	AliAODVertex  *pv =(AliAODVertex*)aod->GetPrimaryVertex();//needed as pointer?
-	//ITS PV is fine, no overlap with MFT
-	TObjArray muonsarr;
-	AliExternalTrackParam firstMuon;
-	firstMuon.CopyFromVTrack(muon1);
-	AliExternalTrackParam secondMuon;
-	secondMuon.CopyFromVTrack(muon2);
+	AliAODTrack* muon2 = (AliAODTrack*) muons.At(imuons2):
+	  if(!cuts->IsSelected(muon2)) continue;
+	//retrieve only selected muons
+	//TODO: how to write the loop in the easiest way
+	if(fDimuonVertexing) {
+	  AliAODVertex  *pv =(AliAODVertex*)aod->GetPrimaryVertex();//needed as pointer?
+	  //ITS PV is fine, no overlap with MFT
+	  TObjArray muonsarr;
+	  AliExternalTrackParam firstMuon;
+	  firstMuon.CopyFromVTrack(muon1);
+	  AliExternalTrackParam secondMuon;
+	  secondMuon.CopyFromVTrack(muon2);
 	TObjArray muonDaughters;
 	muonDaughters.Add(&firstMuon);
 	muonDaughters.Add(&secondMuon);
 	Double_t dispersion =0;
-	AliAODVertex *bvertex = ReconstructBplusVertex(pv, &muonDaughters, bfield, dispersion);//assume that bfield the same for MFT...
-	//not completely right, but angle of constellation minimising deviations
+	AliAODVertex *bvertex = ReconstructBplusVertex(pv, &muonDaughters, bfield, dispersion);
+	//TODO: check if b-field handling fine also for forward
 	if(bvertex){
-
 	  //use new vertex to create btomumu candidate
 	  Double_t xdummy =0., ydummy = 0.;
 	  Double_t d0z0[2], covd0z0[3], d0[2], d0err[2];
@@ -2850,10 +2831,11 @@ void AliAnalysisTaskSEHFTreeCreator::ProcessDiMuons(AliAODEvent *aod, AliMuonTra
 	  id[0] = firstMuon.GetID();
 	  id[1] = secondMuon.GetID();
 
-	  firstMuon.PropagateToDCA(pv, bfield, 100.,/*TODO: meaning? */  d0z0, covd0z0);
+	  firstMuon.PropagateToDCA(pv, bfield, 100./*max. impact par.*/,  d0z0, covd0z0);
 	  d0[0] = d0z0[0];
 	  d0err[0] = TMath::Sqrt(covd0z0[0]);
-	  secondMuon.PropagateToDCA(pv, bfield, 100., d0z0, covd0z0);//does this make sense? where is d0z0 and covd0z0 used before it is overwritten here?
+	  secondMuon.PropagateToDCA(pv, bfield, 100./*max. impact par.*/, d0z0, covd0z0);//TODO: does this make sense (copied from Bplus)?
+	  //where is d0z0 and covd0z0 used before it is overwritten here?
 	  d0[1] = d0z0[0];
 	  d0err[1] = TMath::Sqrt(covd0z0[0]);
 
@@ -2865,11 +2847,11 @@ void AliAnalysisTaskSEHFTreeCreator::ProcessDiMuons(AliAODEvent *aod, AliMuonTra
 	//dimuon.SetCharge(chargeMother);
 	//dimuon.SetProngIDs(2, id); //needed?
 
-	//TODO: apply cuts
+	//TODO: apply cuts on pair level
 	//MC matching
 	//SetVariables, setCanddiateType (needs MC matching)
 	//FillTree
-	fTreeHandlerDiMuons->SetVariables(fRunNumber, fEventID, ptgen, &dimuon, 0.0 /*tobedone bfield*/);
+	fTreeHandlerDiMuons->SetVariables(fRunNumber, fEventID, ptgen, &dimuon, bfield);
 	fTreeHandlerDiMuons->FillTree();
 	
 	}
@@ -2877,7 +2859,7 @@ void AliAnalysisTaskSEHFTreeCreator::ProcessDiMuons(AliAODEvent *aod, AliMuonTra
       
       }else {
 	AliAODDimuon dimuon(muon1,muon2);
-	fTreeHandlerDiMuons->SetVariables(fRunNumber, fEventID, ptgen, &dimuon, 0.0 /*tobedone bfield*/);
+	fTreeHandlerDiMuons->SetVariables(fRunNumber, fEventID, ptgen, &dimuon, bfield);
 	fTreeHandlerDiMuons->FillTree();
 
       }
@@ -2885,10 +2867,7 @@ void AliAnalysisTaskSEHFTreeCreator::ProcessDiMuons(AliAODEvent *aod, AliMuonTra
       //TODO trigger logic
       }
   }
-  //fNentries->Fill();//something
-
-  
-
+  //fNentries->Fill();//TOBEDONE
 }
 //_________________________________________________________________
 void AliAnalysisTaskSEHFTreeCreator::ProcessMCGen(TClonesArray *arrayMC){

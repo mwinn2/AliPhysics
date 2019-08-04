@@ -96,6 +96,81 @@ AliDQTreeHandlerDiMuons::AliDQTreeHandlerDiMuons():
   }
 }
 //________________________________________________________________
+AliDQTreeHandlerDiMuons::AliDQTreeHandlerDiMuons(int PIDopt):
+  TObject(),
+  fTreeVar(nullptr),
+  fNProngs(-1),
+  fNCandidates(0),
+  fCandType(0),
+  fInvMass(-9999.),
+  fPt(-9999.),
+  fP(-9999.),
+  fPtGen(-9999.),
+  fY(-9999.),
+  fEta(-9999.),
+  fPhi(-9999.),
+  fDecayLength(-9999.),
+  fNormDecayLength(-9999.),
+  fDecayLengthZ(-9999.),
+  fNormDecayLengthZ(-9999.),
+  fPseudopropertimeZ(-9999.),
+  fPseudopropertimeZres(-9999.),
+  fPseudopropertimeXY(-9999.),
+  fPseudopropertimeXYres(-9999.),
+  fCosP(-9999.),
+  fCosPz(-9999.),
+  fImpParZ(-9999.),
+  fXF(-9999.),
+  fCostCS(-9999.),
+  fCostHe(-9999.),
+  fPhiCS(-9999.),
+  fPhiHe(-9999.),
+  fPidOpt(PIDopt),
+  fSingleTrackOpt(true),
+  fFillOnlySignal(false),
+  fIsMCGenTree(false),
+  fDauInAcceptance(true),
+  fEvID(0),
+  fRunNumber(-1),
+  fRunNumberPrevCand(-1),
+  fCosThetaStar(-9999.),
+  fImpParProd(-9999.),
+  fNormjpsiMeasMinusExp(-9999.)
+{
+  //
+  // Standard constructor
+  //
+  fNProngs=2; // --> cannot be changed
+  for(unsigned int iProng=0; iProng<fNProngs; iProng++) {
+    fCharge[iProng] = -999.;
+    fDCA[iProng] = -9999.;
+    fDCAz[iProng] = -999.;
+    fPProng[iProng] = 9999.;
+    fMCHPProng[iProng] = 9999.;
+    fPtProng[iProng] = 9999.;
+    fMCHPtProng[iProng] = 9999.;
+    fEtaProng[iProng] = 9999.;
+    fMCHEtaProng[iProng] = 9999.;
+    fPhiProng[iProng] = 9999.;
+    fMCHPhiProng[iProng] = 9999.;
+    fNMFTclsProng[iProng] = -1;
+    fMFTclsMapProng[iProng] = -1;
+    fNMCHclsProng[iProng] = -1;
+    fMIDPID[iProng] = true;
+    fMIDchi2perNDF[iProng] = -9999.;
+    fImpParProng[iProng] = -9999.;
+    fImpParErrProng[iProng] = -9999.;
+    fMFTChi2perNDF[iProng] = -9999.;
+    fMuonChi2perNDF[iProng] = -999.;
+    fMuonMatchChi2perNDF[iProng] = -999.;
+    fRatAbsorberEnd[iProng] = -999.;
+    fHasMFTProng[iProng] = true;
+    fabsPDGProng[iProng] = 999;
+    fabsPDGProngmother[iProng] = 999;
+    fabsPDGPronggdmother[iProng] = 999;
+  }
+}
+//________________________________________________________________
 AliDQTreeHandlerDiMuons::~AliDQTreeHandlerDiMuons()
 {
   //

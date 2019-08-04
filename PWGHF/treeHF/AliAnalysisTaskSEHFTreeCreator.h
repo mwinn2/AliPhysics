@@ -104,6 +104,7 @@ public:
     void SetPIDoptDstarTree(Int_t opt){fPIDoptDstar=opt;}
     void SetPIDoptLc2V0bachelorTree(Int_t opt){fPIDoptLc2V0bachelor=opt;}
     void SetFillMCGenTrees(Bool_t fillMCgen) {fFillMCGenTrees=fillMCgen;}
+    void SetDimuonVertexing(Bool_t dodimuonvertex) {fDimuonVertexing=dodimuonvertex;}
 
     void SetFillDQSingleMuonsTree(Int_t opt){fWriteVariableTreeSingleMuons=opt;}
     void SetFillDQDiMuonsTree(Int_t opt){fWriteVariableTreeDiMuons=opt;}
@@ -199,6 +200,7 @@ private:
     AliMuonTrackCuts        *fCutsMuons; 
     AliRDHFCuts             *fEvSelectionCuts;                     //      Event selection cuts
     Bool_t                  fReadMC;                               //     flag for MC array: kTRUE = read it, kFALSE = do not read it
+    Bool_t                  fDimuonVertexing;                      //     flag to do dimuonvertexing by hand
     TList                   *fListCounter;                         //!<!   list for normalization counter on output slot 3
     AliNormalizationCounter *fCounter;                             //!<!   AliNormalizationCounter
     Bool_t                  fUseSelectionBit;

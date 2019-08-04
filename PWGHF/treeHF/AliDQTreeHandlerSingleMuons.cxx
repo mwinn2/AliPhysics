@@ -60,6 +60,47 @@ AliDQTreeHandlerSingleMuons::AliDQTreeHandlerSingleMuons():
   // Default constructor
   //
 }
+//________________________________________________________________
+AliDQTreeHandlerSingleMuons::AliDQTreeHandlerSingleMuons(int PIDopt):
+  TObject(),
+  fTreeVar(nullptr),
+  fNCandidates(0),
+  fCandType(0),
+  fInvMass(-9999.),
+  fPt(-9999.),
+  fP(-9999.),
+  fPtGen(-9999.),
+  fY(-9999.),
+  fEta(-9999.),
+  fPhi(-9999.),
+  fCharge(-9999.),
+  fDCA(-9999),
+  fDCAxy(-9999.),
+  fDCAz(-9999.),
+  fMuonChi2perNDF(-9999.),
+  fRatAbsorberEnd(-9999.),
+  fHasMFT(false),
+  fMuonMatchChi2perNDF(-9999.),
+  fMuonMCHcls(-1),
+  fMIDPID(-1),
+  fPidOpt(PIDopt),
+  fSingleTrackOpt(-1),
+  fFillOnlySignal(false),
+  fIsMCGenTree(false),
+  fTrackInAcceptance(false),
+  fabsPDGmother(9999),
+  fabsPDGgdmother(9999),
+  fEvID(9999),
+  fRunNumber(9999),
+  fRunNumberPrevCand(9999),
+  fMFTChi2perNDF(-999.),
+  fMFTcls(-1)
+{
+  //
+  // Standard constructor
+  //
+}
+
 
 //________________________________________________________________
 AliDQTreeHandlerSingleMuons::~AliDQTreeHandlerSingleMuons()

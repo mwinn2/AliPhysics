@@ -22,7 +22,7 @@ class AliDQTreeHandlerSingleMuons : public TObject
 {
   public:
 
-  enum candtype{//TODO introduce things that make sense for single muons
+  enum candtype{
     kSelected         = BIT(0),
     kSignal           = BIT(1),
     kBkg              = BIT(2),
@@ -36,10 +36,8 @@ class AliDQTreeHandlerSingleMuons : public TObject
   };
   
   
-  //optPID something about MID
-  //for Run 2 just trigger match
-  enum optpid {// check if 
-    kNoMID, //trigger
+  enum optpid {
+    kNoMID,
     kMID
   };
   
@@ -49,7 +47,8 @@ class AliDQTreeHandlerSingleMuons : public TObject
   };
     
     AliDQTreeHandlerSingleMuons();
-
+    AliDQTreeHandlerSingleMuons(int PIDopt);
+    
     virtual ~AliDQTreeHandlerSingleMuons();
 
     TTree* BuildTree(TString name, TString title);

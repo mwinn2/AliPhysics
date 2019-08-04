@@ -49,7 +49,8 @@ class AliDQTreeHandlerDiMuons : public TObject
   };
     
     AliDQTreeHandlerDiMuons();
-
+    AliDQTreeHandlerDiMuons(int PIDopt);
+    
     virtual ~AliDQTreeHandlerDiMuons();
 
     TTree* BuildTree(TString name, TString title);
